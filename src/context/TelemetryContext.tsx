@@ -1,4 +1,4 @@
-// Fuel Sentinel - Automotive Telemetry Context & Live Hardware Integration
+// Divine Fuel - Automotive Telemetry Context & Live Hardware Integration
 // Supports Multi-Vehicle Fleet, Live IoT Hardware Gateway (V0-V9), and Resilient Security Alarms
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
@@ -18,7 +18,7 @@ import type {
   TripRecord
 } from '../types/telemetry';
 import { STANDARD_CALIBRATIONS } from '../utils/calibration';
-import { audioAlert } from '../utils/audioAlert';
+import { audioAlert, triggerTheftNotification } from '../utils/audioAlert';
 
 export type SimulationScenario =
   | 'NORMAL_PARKED'
@@ -157,9 +157,9 @@ const DEFAULT_BLYNK_PINS: BlynkDatastreams = {
 
 const DEFAULT_FIREBASE: FirebaseConfig = {
   apiKey: '',
-  databaseURL: 'https://fuel-sentinel-hw-default-rtdb.firebaseio.com',
-  projectId: 'fuel-sentinel-hw',
-  deviceId: 'ESP32-FS-01',
+  databaseURL: 'https://divine-fuel-hw-default-rtdb.firebaseio.com',
+  projectId: 'divine-fuel-hw',
+  deviceId: 'ESP32-DF-01',
   authToken: '',
   isConnected: false,
   lastSyncTime: null
@@ -801,14 +801,22 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         const hasTheftMsg = rawTheftMsg !== '' && rawTheftMsg !== 'OK' && rawTheftMsg !== '0' && !isDismissed;
         const isAlarm = isTampered || Boolean(hasTheftMsg);
 
-        setSecurity((prev) => ({
-          ...prev,
-          ignition: isIgnitionOn ? 'ON' : 'OFF',
-          tamper: isTampered ? 'TRIPPED' : 'SECURE',
-          theftAlarmActive: isAlarm,
-          theftAlarmReason: hasTheftMsg ? parsedPins.v2 : isTampered ? 'Physical sensor wire severed!' : null,
-          theftDropVolumeLitres: (parsedPins.v8 / 100) * activeVehicle.tankCapacityLitres
-        }));
+        setSecurity((prev) => {
+          if (isAlarm && !prev.theftAlarmActive) {
+            if (!isAudioMuted) {
+              audioAlert.startAlarmSiren();
+            }
+            triggerTheftNotification(activeVehicle.plate, (parsedPins.v8 / 100) * activeVehicle.tankCapacityLitres);
+          }
+          return {
+            ...prev,
+            ignition: isIgnitionOn ? 'ON' : 'OFF',
+            tamper: isTampered ? 'TRIPPED' : 'SECURE',
+            theftAlarmActive: isAlarm,
+            theftAlarmReason: hasTheftMsg ? parsedPins.v2 : isTampered ? 'Physical sensor wire severed!' : null,
+            theftDropVolumeLitres: (parsedPins.v8 / 100) * activeVehicle.tankCapacityLitres
+          };
+        });
 
         // GPS from V3, V4, V5
         setGps((prev) => ({
@@ -1051,6 +1059,7 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (!isAudioMuted) {
         audioAlert.startAlarmSiren();
       }
+      triggerTheftNotification(activeVehicle.plate, drainedAmount);
     } else if (scenario === 'REFILL_STATION') {
       audioAlert.stopAlarm();
       const refillAmount = 48.0;
@@ -1092,7 +1101,7 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `FuelSentinel_Logs_${activeVehicle.plate.replace(/\s+/g, '_')}_${Date.now()}.csv`);
+    link.setAttribute('download', `DivineFuel_Logs_${activeVehicle.plate.replace(/\s+/g, '_')}_${Date.now()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

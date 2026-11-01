@@ -1,6 +1,6 @@
 // Navigation Header and iOS Bottom Dock
 // Pixel-Perfect Implementation Matching User Mockup:
-// - Top Header: Green Shield Brand Logo + "Fuel Sentinel" + Bell with '2' Badge + Profile Avatar
+// - Top Header: Green Shield Brand Logo + "Divine Fuel" + Bell with '2' Badge + Profile Avatar
 // - Bottom Dock: Dashboard, Vehicles, Location, Alerts, More
 
 import React, { useState } from 'react';
@@ -30,7 +30,8 @@ export type ScreenId =
   | 'history'
   | 'diagnostics'
   | 'setup'
-  | 'firebase';
+  | 'firebase'
+  | 'profile';
 
 interface NavigationProps {
   activeScreen: ScreenId;
@@ -70,7 +71,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           <div className="brand-group" onClick={() => onSelectScreen('dashboard')} style={{ cursor: 'pointer' }}>
             <ShieldFuelBrandIcon size={36} />
             <div>
-              <span className="brand-title" style={{ fontSize: '18px' }}>Fuel Sentinel</span>
+              <span className="brand-title" style={{ fontSize: '18px' }}>Divine Fuel</span>
               <div style={{ fontSize: '11px', color: '#6B7280', fontWeight: 600 }}>Fleet Telemetry &amp; Security</div>
             </div>
           </div>
@@ -176,9 +177,13 @@ export const Navigation: React.FC<NavigationProps> = ({
           </button>
 
           <button
-            onClick={() => onSelectScreen('firebase')}
-            className="header-icon-btn"
-            title="Settings & Hardware Link"
+            onClick={() => handleSelect('profile')}
+            className={`header-icon-btn ${activeScreen === 'profile' ? 'active' : ''}`}
+            title="Account Profile"
+            style={{
+              borderRadius: '50%',
+              outline: activeScreen === 'profile' ? '2px solid #15803D' : 'none'
+            }}
           >
             <UserAvatarIcon size={34} />
           </button>
@@ -189,7 +194,7 @@ export const Navigation: React.FC<NavigationProps> = ({
       <header className="mobile-header">
         <div className="brand-group" onClick={() => onSelectScreen('dashboard')}>
           <ShieldFuelBrandIcon size={34} />
-          <span className="brand-title">Fuel Sentinel</span>
+          <span className="brand-title">Divine Fuel</span>
         </div>
 
         <div className="header-actions">
@@ -208,9 +213,13 @@ export const Navigation: React.FC<NavigationProps> = ({
 
           {/* User Profile Avatar */}
           <button
-            onClick={() => onSelectScreen('firebase')}
-            className="header-icon-btn"
-            title="Settings & Hardware Link"
+            onClick={() => handleSelect('profile')}
+            className={`header-icon-btn ${activeScreen === 'profile' ? 'active' : ''}`}
+            title="Account Profile"
+            style={{
+              borderRadius: '50%',
+              outline: activeScreen === 'profile' ? '2px solid #15803D' : 'none'
+            }}
           >
             <UserAvatarIcon size={32} />
           </button>
@@ -269,16 +278,23 @@ export const Navigation: React.FC<NavigationProps> = ({
         </button>
 
         {/* 5. More */}
-        <button
-          className={`nav-tab-item ${['fuel', 'diagnostics', 'firebase', 'history'].includes(activeScreen) ? 'active' : ''}`}
-          onClick={() => setMoreMenuOpen(true)}
-        >
-          <MenuHamburgerIcon
-            size={22}
-            color={['fuel', 'diagnostics', 'firebase', 'history'].includes(activeScreen) ? '#15803D' : '#9CA3AF'}
-          />
-          <span>More</span>
-        </button>
+        {(() => {
+          const isMoreActive = moreMenuOpen || ['fuel', 'diagnostics', 'firebase', 'history', 'profile'].includes(activeScreen);
+          return (
+            <button
+              className={`nav-tab-item ${isMoreActive ? 'active' : ''}`}
+              onClick={() => setMoreMenuOpen(!moreMenuOpen)}
+            >
+              <MenuHamburgerIcon
+                size={22}
+                color={isMoreActive ? '#15803D' : '#9CA3AF'}
+              />
+              <span style={{ color: isMoreActive ? '#15803D' : undefined, fontWeight: isMoreActive ? 700 : 500 }}>
+                More
+              </span>
+            </button>
+          );
+        })()}
       </nav>
 
       {/* MORE SCREEN DRAWER / MODAL */}
@@ -309,6 +325,29 @@ export const Navigation: React.FC<NavigationProps> = ({
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <button
+                onClick={() => handleSelect('profile')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '12px 14px',
+                  borderRadius: '12px',
+                  border: activeScreen === 'profile' ? '1.5px solid #16A34A' : '1px solid #E5E7EB',
+                  backgroundColor: activeScreen === 'profile' ? '#F0FDF4' : '#FFFFFF',
+                  cursor: 'pointer',
+                  textAlign: 'left'
+                }}
+              >
+                <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <UserAvatarIcon size={22} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '14px', color: '#111827' }}>Account &amp; Security Profile</div>
+                  <div style={{ fontSize: '11.5px', color: '#6B7280' }}>Sohan Rai &bull; Siren alarm &amp; emergency dispatch</div>
+                </div>
+              </button>
+
               <button
                 onClick={() => handleSelect('fuel')}
                 style={{

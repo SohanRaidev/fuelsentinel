@@ -1,4 +1,4 @@
-// Interactive Leaflet Map Component for Fuel Sentinel
+// Interactive Leaflet Map Component for Divine Fuel
 // Real Map Tiles (CartoDB Positron / OpenStreetMap) with Dynamic Geographic Waypoint Polyline
 // Automatically updates when the map is dragged, zoomed, or vehicle moves!
 

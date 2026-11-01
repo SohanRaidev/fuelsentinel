@@ -32,71 +32,155 @@ export const DiagnosticsScreen: React.FC = () => {
   };
 
   const esp32Code = `/*
-  FUEL SENTINEL - ESP32 EMBEDDED AUTOMOTIVE FIRMWARE
-  Auth Token: ${blynkConfig.authToken}
-  Template ID: ${blynkConfig.templateId}
+  DIVINE FUEL - PROFESSIONAL AUTOMOTIVE TELEMETRY & ANTI-THEFT FIRMWARE
+  Blynk Template ID   : ${blynkConfig.templateId}
+  Blynk Template Name : Divine Fuel
+  Blynk Auth Token    : ${blynkConfig.authToken}
 */
 
 #define BLYNK_TEMPLATE_ID   "${blynkConfig.templateId}"
-#define BLYNK_TEMPLATE_NAME "Fuel Sentinel"
+#define BLYNK_TEMPLATE_NAME "Divine Fuel"
 #define BLYNK_AUTH_TOKEN    "${blynkConfig.authToken}"
 
 #include <WiFi.h>
+#include <WiFiClient.h>
 #include <BlynkSimpleEsp32.h>
 #include <HardwareSerial.h>
 #include <TinyGPSPlus.h>
+#include <Preferences.h>
 
-#define PIN_FUEL_ADC       34   // Fuel sender (150 ohm pull-up to 3.3V)
-#define PIN_IGNITION_SENSE 25   // Optocoupler 12V key sense
-#define PIN_TAMPER_LOOP    26   // Grounded security loop
-#define PIN_SIREN_RELAY    22   // 110dB siren relay
-#define PIN_CUTOFF_VALVE   23   // Fuel line solenoid cutoff
-#define PIN_ONBOARD_LED     2   // Status LED
+// GPIO PIN CONFIGURATION
+#define PIN_FUEL_ADC        34   // ADC1_CH6 - Tank resistance sensor
+#define PIN_IGNITION_SENSE  27   // 12V Key Switch Ignition Sense
+#define PIN_TAMPER_LOOP     26   // Anti-tamper loop to GND (INPUT_PULLUP)
+#define PIN_SIREN_RELAY     22   // 110dB Siren Horn Relay (Active HIGH)
+#define PIN_CUTOFF_VALVE    23   // Engine Fuel Line Solenoid Valve
+#define PIN_STATUS_LED       2   // Diagnostic Heartbeat LED
+#define GPS_RX_PIN          16   // NEO-6M TX -> ESP32 RX2
+#define GPS_TX_PIN          17   // NEO-6M RX -> ESP32 TX2
 
-HardwareSerial gpsSerial(2);
+const float TANK_CAPACITY_LITRES  = 150.0;
+const float THEFT_DROP_THRESH_PCT = 1.5; // Siphon alarm threshold
+
+const float DEFAULT_V_FULL  = 0.30;
+const float DEFAULT_V_EMPTY = 1.75;
+
 TinyGPSPlus gps;
+HardwareSerial GPS_Serial(2);
 BlynkTimer timer;
+Preferences prefs;
 
-void sendTelemetry() {
-  int rawAdc = analogRead(PIN_FUEL_ADC);
-  int fuelPct = constrain(map(rawAdc, 500, 3200, 0, 100), 0, 100);
-  Blynk.virtualWrite(V0, fuelPct);
+float calVFull = DEFAULT_V_FULL;
+float calVEmpty = DEFAULT_V_EMPTY;
+float filteredVoltageMv = 0.0;
+bool isFilterInitialized = false;
 
-  int ignState = digitalRead(PIN_IGNITION_SENSE);
-  Blynk.virtualWrite(V6, ignState);
+float fuelLevelPercent = 0.0;
+int ignitionStatus = 0;
+int lastIgnitionState = -1;
+float lastFuelWhenOff = 0.0;
+float fuelDifference = 0.0;
+int tamperStatus = 0;
+bool isTheftAlarm = false;
+String theftAlertMsg = "SYSTEM NORMAL";
 
-  int tamperState = digitalRead(PIN_TAMPER_LOOP);
-  Blynk.virtualWrite(V9, tamperState);
+char ssid[] = "YOUR_WIFI_NAME";
+char pass[] = "YOUR_WIFI_PASSWORD";
 
-  while (gpsSerial.available() > 0) {
-    gps.encode(gpsSerial.read());
+void readFilteredFuel() {
+  uint32_t rawMvTotal = 0;
+  for (int i = 0; i < 25; i++) {
+    rawMvTotal += analogReadMilliVolts(PIN_FUEL_ADC);
+    delayMicroseconds(800);
   }
+  float instantMv = (float)rawMvTotal / 25.0;
+  if (!isFilterInitialized) {
+    filteredVoltageMv = instantMv;
+    isFilterInitialized = true;
+  } else {
+    filteredVoltageMv = (0.08 * instantMv) + (0.92 * filteredVoltageMv);
+  }
+  float v = filteredVoltageMv / 1000.0;
+  float pct = ((calVEmpty - v) / (calVEmpty - calVFull)) * 100.0;
+  fuelLevelPercent = constrain(pct, 0.0, 100.0);
+}
 
-  if (gps.location.isValid()) {
-    Blynk.virtualWrite(V3, gps.location.lat());
-    Blynk.virtualWrite(V4, gps.location.lng());
-    String gmaps = "https://maps.google.com/?q=" + String(gps.location.lat(), 6) + "," + String(gps.location.lng(), 6);
-    Blynk.virtualWrite(V5, gmaps);
+void readIgnitionAndTamper() {
+  ignitionStatus = (digitalRead(PIN_IGNITION_SENSE) == HIGH) ? 1 : 0;
+  tamperStatus = (digitalRead(PIN_TAMPER_LOOP) == LOW) ? 1 : 0;
+
+  if (lastIgnitionState == 1 && ignitionStatus == 0) {
+    lastFuelWhenOff = fuelLevelPercent;
+    fuelDifference = 0.0;
+  }
+  lastIgnitionState = ignitionStatus;
+}
+
+void evaluateTheftSecurity() {
+  isTheftAlarm = false;
+  if (tamperStatus == 1) {
+    isTheftAlarm = true;
+    theftAlertMsg = "CRITICAL: TAMPER WIRE SEVERED!";
+  } else if (ignitionStatus == 0 && lastFuelWhenOff > 0.0) {
+    fuelDifference = lastFuelWhenOff - fuelLevelPercent;
+    if (fuelDifference >= THEFT_DROP_THRESH_PCT) {
+      isTheftAlarm = true;
+      theftAlertMsg = "THEFT: RAPID SIPHON DETECTED!";
+    } else {
+      theftAlertMsg = "SYSTEM NORMAL";
+    }
+  } else {
+    theftAlertMsg = "SYSTEM NORMAL";
+    fuelDifference = 0.0;
+  }
+  digitalWrite(PIN_SIREN_RELAY, isTheftAlarm ? HIGH : LOW);
+}
+
+void readGPS() {
+  while (GPS_Serial.available() > 0) gps.encode(GPS_Serial.read());
+}
+
+void sendTelemetryToBlynk() {
+  readFilteredFuel();
+  readIgnitionAndTamper();
+  evaluateTheftSecurity();
+
+  if (Blynk.connected()) {
+    Blynk.virtualWrite(V0, round(fuelLevelPercent));
+    Blynk.virtualWrite(V2, theftAlertMsg);
+    Blynk.virtualWrite(V6, ignitionStatus);
+    Blynk.virtualWrite(V7, lastFuelWhenOff);
+    Blynk.virtualWrite(V8, fuelDifference);
+    Blynk.virtualWrite(V9, tamperStatus);
+
+    if (gps.location.isValid() && gps.location.age() < 5000) {
+      Blynk.virtualWrite(V3, gps.location.lat());
+      Blynk.virtualWrite(V4, gps.location.lng());
+      String gmaps = "https://www.google.com/maps?q=" + String(gps.location.lat(), 6) + "," + String(gps.location.lng(), 6);
+      Blynk.virtualWrite(V5, gmaps);
+    }
   }
 }
 
 void setup() {
   Serial.begin(115200);
-  gpsSerial.begin(9600, SERIAL_8N1, 16, 17);
-  pinMode(PIN_FUEL_ADC, INPUT);
-  pinMode(PIN_IGNITION_SENSE, INPUT_PULLDOWN);
+  pinMode(PIN_IGNITION_SENSE, INPUT);
   pinMode(PIN_TAMPER_LOOP, INPUT_PULLUP);
   pinMode(PIN_SIREN_RELAY, OUTPUT);
   pinMode(PIN_CUTOFF_VALVE, OUTPUT);
-  pinMode(PIN_ONBOARD_LED, OUTPUT);
+  pinMode(PIN_STATUS_LED, OUTPUT);
+  analogReadResolution(12);
+  analogSetPinAttenuation(PIN_FUEL_ADC, ADC_11db);
+  GPS_Serial.begin(9600, SERIAL_8N1, GPS_RX_PIN, GPS_TX_PIN);
 
-  Blynk.begin(BLYNK_AUTH_TOKEN, "YOUR_WIFI_SSID", "YOUR_WIFI_PASS");
-  timer.setInterval(2000L, sendTelemetry);
+  Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass);
+  timer.setInterval(2000L, sendTelemetryToBlynk);
 }
 
 void loop() {
   Blynk.run();
   timer.run();
+  readGPS();
 }
 `;
 

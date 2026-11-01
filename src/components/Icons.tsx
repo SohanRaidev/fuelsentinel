@@ -1,4 +1,4 @@
-// Fuel Sentinel Bespoke Neo-Brutalist Technical SVG Icons
+// Divine Fuel Bespoke Technical SVG Icons
 // Engineered automotive iconography with uniform 2px/2.5px stroke and zero external dependencies
 
 import React from 'react';

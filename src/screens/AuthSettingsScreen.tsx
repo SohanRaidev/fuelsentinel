@@ -260,7 +260,7 @@ export const AuthSettingsScreen: React.FC = () => {
               type="text"
               value={fbForm.projectId}
               onChange={(e) => setFbForm({ ...fbForm, projectId: e.target.value })}
-              placeholder="fuel-sentinel-hw"
+              placeholder="divine-fuel-hw"
               style={{ width: '100%', padding: '9px 12px', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '12.5px' }}
             />
           </div>

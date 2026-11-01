@@ -1,6 +1,6 @@
 {
-  "name": "Fuel Sentinel - Vehicle Fuel Security & Anti-Theft",
-  "short_name": "FuelSentinel",
+  "name": "Divine Fuel - Vehicle Fuel Security & Anti-Theft",
+  "short_name": "Divine Fuel",
   "description": "Industrial automotive fuel level telemetry, rapid siphon/theft detection, tamper alarm, and GPS tracking PWA",
   "start_url": "/",
   "scope": "/",

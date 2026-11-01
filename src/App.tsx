@@ -1,4 +1,4 @@
-// Fuel Sentinel - Neo-Brutalist Automotive PWA Main Application
+// Divine Fuel - Modern Automotive PWA Main Application
 
 import React, { useState, useEffect } from 'react';
 import { TelemetryProvider } from './context/TelemetryContext';
@@ -15,6 +15,7 @@ import { HistoryScreen } from './screens/HistoryScreen';
 import { DiagnosticsScreen } from './screens/DiagnosticsScreen';
 import { VehicleSetupScreen } from './screens/VehicleSetupScreen';
 import { AuthSettingsScreen } from './screens/AuthSettingsScreen';
+import { ProfileScreen } from './screens/ProfileScreen';
 
 const MainCockpit: React.FC = () => {
   const [activeScreen, setActiveScreen] = useState<ScreenId>('dashboard');
@@ -30,6 +31,22 @@ const MainCockpit: React.FC = () => {
     return unsub;
   }, []);
 
+  // Prompt the user to install the app on initial website visit (unless already in standalone PWA mode)
+  useEffect(() => {
+    const isStandalone = typeof window !== 'undefined' && (
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as unknown as { standalone?: boolean }).standalone === true
+    );
+    const wasDismissed = sessionStorage.getItem('divine_fuel_install_dismissed') === 'true';
+
+    if (!isStandalone && !wasDismissed) {
+      const promptTimer = setTimeout(() => {
+        setInstallModalOpen(true);
+      }, 700);
+      return () => clearTimeout(promptTimer);
+    }
+  }, []);
+
   // Sync with URL Hash for PWA shortcuts and direct bookmarking
   useEffect(() => {
     const handleHash = () => {
@@ -43,7 +60,8 @@ const MainCockpit: React.FC = () => {
           'history',
           'diagnostics',
           'setup',
-          'firebase'
+          'firebase',
+          'profile'
         ].includes(hash)
       ) {
         setActiveScreen(hash);
@@ -82,6 +100,7 @@ const MainCockpit: React.FC = () => {
           {activeScreen === 'diagnostics' && <DiagnosticsScreen />}
           {activeScreen === 'setup' && <VehicleSetupScreen />}
           {activeScreen === 'firebase' && <AuthSettingsScreen />}
+          {activeScreen === 'profile' && <ProfileScreen onOpenInstallPrompt={() => setInstallModalOpen(true)} />}
         </div>
       </main>
 

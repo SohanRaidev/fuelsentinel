@@ -1,4 +1,4 @@
-// Fuel Sentinel Telemetry & Security Domain Types
+// Divine Fuel Telemetry & Security Domain Types
 
 export type IgnitionState = 'OFF' | 'ACC' | 'ON' | 'CRANK';
 export type TamperState = 'SECURE' | 'TRIPPED' | 'TAMPER_DETECTED' | 'LOOP_OPEN';

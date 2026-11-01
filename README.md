@@ -1,6 +1,6 @@
-# Fuel Sentinel: Vehicle Fuel Security & Anti-Theft PWA
+# Divine Fuel: Vehicle Fuel Security & Anti-Theft PWA
 
-Fuel Sentinel is an installable Progressive Web App (PWA) optimized for mobile phones and desktop browsers. It connects to an ESP32 microcontroller with a fuel sender resistance circuit, a NEO-6M GPS module, and a tamper detection loop to detect rapid fuel siphoning, cable cutting, and vehicle movement.
+Divine Fuel is an installable Progressive Web App (PWA) optimized for mobile phones and desktop browsers. It connects to an ESP32 microcontroller with a fuel sender resistance circuit, a NEO-6M GPS module, and a tamper detection loop to detect rapid fuel siphoning, cable cutting, and vehicle movement.
 
 ---
 
@@ -41,7 +41,7 @@ npm run dev -- --host 0.0.0.0 --port 5173
 
 ## 2. Travel, Routes Highlighting & Fuel Loss vs Consumption Tracking
 
-Fuel Sentinel includes a dedicated **Travel & Fuel Audit** module accessible via the bottom navigation bar (`Location / Routes` tab) or the quick card on the main Dashboard:
+Divine Fuel includes a dedicated **Travel & Fuel Audit** module accessible via the bottom navigation bar (`Location / Routes` tab) or the quick card on the main Dashboard:
 
 ### Core Capabilities:
 - **Highlighted Route Visualizer on Map**:
@@ -60,7 +60,7 @@ Fuel Sentinel includes a dedicated **Travel & Fuel Audit** module accessible via
 
 ## 2. Phone PWA Installation Guide
 
-Fuel Sentinel is a true Progressive Web App that runs standalone without URL bars or browser chrome:
+Divine Fuel is a true Progressive Web App that runs standalone without URL bars or browser chrome:
 
 - **Android (Chrome)**: Tap the three dots menu &rarr; tap **"Add to Home screen"** or tap the **"INSTALL APP"** button in the top navigation bar.
 - **iPhone / iOS (Safari)**:
@@ -80,7 +80,7 @@ To connect your real ESP32 and phone PWA without paying monthly Blynk subscripti
 ### Step 3.1: Create a Firebase Project
 1. Go to [https://console.firebase.google.com/](https://console.firebase.google.com/).
 2. Click **Add project** (or **Create a project**).
-3. Name your project (e.g. `fuel-sentinel-fleet`).
+3. Name your project (e.g. `divine-fuel-fleet`).
 4. Disable Google Analytics (optional, not required) and click **Create project**.
 
 ### Step 3.2: Create the Realtime Database
@@ -91,7 +91,7 @@ To connect your real ESP32 and phone PWA without paying monthly Blynk subscripti
 5. Click **Enable**.
 6. Copy your **Database URL** from the top of the database tab. It looks like:
    ```
-   https://fuel-sentinel-fleet-default-rtdb.firebaseio.com/
+   https://divine-fuel-fleet-default-rtdb.firebaseio.com/
    ```
 
 ### Step 3.3: Set Realtime Database Security Rules
@@ -116,10 +116,10 @@ Click **Publish**.
 2. Under the **General** tab, find **Web API Key** (starts with `AIzaSy...`).
 3. Copy this key.
 
-### Step 3.5: Enter Credentials into Fuel Sentinel PWA
-1. In the Fuel Sentinel app, open the **DEVICE CONFIG** tab.
-2. Scroll to **FUTURE FIREBASE REALTIME DATABASE BRIDGE**.
-3. Paste your **Database URL**, **Hardware Device ID** (`ESP32-FS-01`), and **Web API Key**.
+### Step 3.5: Enter Credentials into Divine Fuel PWA
+1. In the Divine Fuel app, open the **SETTINGS** tab.
+2. Scroll to **FIREBASE REALTIME DATABASE BRIDGE**.
+3. Paste your **Database URL**, **Hardware Device ID** (`ESP32-DF-01`), and **Web API Key**.
 4. Tap **SAVE FIREBASE CONFIG** to verify communication.
 
 ---

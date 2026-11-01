@@ -1,5 +1,5 @@
-// Fuel Sentinel Service Worker
-const CACHE_NAME = 'fuelsentinel-v1.0.0';
+// Divine Fuel Service Worker
+const CACHE_NAME = 'divinefuel-v2.0.0';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
