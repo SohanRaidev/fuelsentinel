@@ -13,7 +13,8 @@ export const VehicleSetupScreen: React.FC = () => {
     switchVehicle,
     vehicle,
     updateVehicleConfig,
-    addNewVehicle
+    addNewVehicle,
+    resetFleetToDefaults
   } = useTelemetry();
 
   const [formData, setFormData] = useState<VehicleConfig>(vehicle);
@@ -67,21 +68,43 @@ export const VehicleSetupScreen: React.FC = () => {
             </div>
           </div>
 
-          <button
-            onClick={() => setAddModalOpen(true)}
-            style={{
-              padding: '6px 12px',
-              backgroundColor: '#15803D',
-              color: '#FFFFFF',
-              borderRadius: '10px',
-              border: 'none',
-              fontSize: '12px',
-              fontWeight: 700,
-              cursor: 'pointer'
-            }}
-          >
-            + Add Vehicle
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={() => {
+                if (window.confirm('Reset all vehicle names and profiles to the standard Divine Fuel production fleet?')) {
+                  resetFleetToDefaults();
+                }
+              }}
+              style={{
+                padding: '6px 10px',
+                backgroundColor: '#FFFFFF',
+                color: '#6B7280',
+                borderRadius: '10px',
+                border: '1px solid #D1D5DB',
+                fontSize: '11px',
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            >
+              Reset Names
+            </button>
+
+            <button
+              onClick={() => setAddModalOpen(true)}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: '#15803D',
+                color: '#FFFFFF',
+                borderRadius: '10px',
+                border: 'none',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              + Add Vehicle
+            </button>
+          </div>
         </div>
 
         {/* Vehicles List */}

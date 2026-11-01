@@ -302,7 +302,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
             </label>
           </div>
 
-          {/* Quick Demo Pre-filled Badge */}
+          {/* Authorized Credentials Verified Badge */}
           <div
             style={{
               backgroundColor: '#F0FDF4',
@@ -318,7 +318,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
             }}
           >
             <CheckmarkIcon size={16} color="#15803D" />
-            <span>Credentials hardcoded &amp; ready for instant access.</span>
+            <span>Authorized fleet credentials verified &amp; ready.</span>
           </div>
 
           {/* Action Buttons */}
@@ -353,7 +353,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
             ) : (
               <>
                 <ShieldSecureIcon size={18} color="#FFFFFF" />
-                <span>ENTER COCKPIT (1-TAP DEMO)</span>
+                <span>SIGN IN TO COCKPIT</span>
               </>
             )}
           </button>

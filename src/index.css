@@ -1350,3 +1350,50 @@ h1, h2, h3, h4, h5, h6 {
   border: none !important;
 }
 
+/* Premium Automotive Micro-Animations & Theft Emergency Alerts */
+@keyframes emergencyFadeIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes sirenPulseGlow {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.6);
+  }
+  70% {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 16px rgba(220, 38, 38, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+  }
+}
+
+/* Tactile Native Tap Feedback */
+button:active:not(:disabled) {
+  transform: scale(0.975);
+  transition: transform 0.08s ease;
+}
+
+.ios-card {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ios-card:hover {
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.06);
+}
+
+/* Smooth Gauge Sweep Transitions */
+svg path {
+  transition: stroke-dasharray 0.6s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.4s ease;
+}
+
+

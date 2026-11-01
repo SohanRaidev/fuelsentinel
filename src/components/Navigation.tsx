@@ -3,7 +3,7 @@
 // - Top Header: Green Shield Brand Logo + "Divine Fuel" + Bell with '2' Badge + Profile Avatar
 // - Bottom Dock: Dashboard, Vehicles, Location, Alerts, More
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useTelemetry } from '../context/TelemetryContext';
 import {
   ShieldFuelBrandIcon,
@@ -18,8 +18,7 @@ import {
   HistoryLogIcon,
   SettingsIcon,
   VolumeHighIcon,
-  VolumeMuteIcon,
-  CloseIcon
+  VolumeMuteIcon
 } from './Icons';
 
 export type ScreenId =
@@ -31,7 +30,8 @@ export type ScreenId =
   | 'diagnostics'
   | 'setup'
   | 'firebase'
-  | 'profile';
+  | 'profile'
+  | 'more';
 
 interface NavigationProps {
   activeScreen: ScreenId;
@@ -42,9 +42,7 @@ interface NavigationProps {
 
 export const Navigation: React.FC<NavigationProps> = ({
   activeScreen,
-  onSelectScreen,
-  onOpenInstallPrompt,
-  canInstall
+  onSelectScreen
 }) => {
   const {
     alerts,
@@ -53,15 +51,12 @@ export const Navigation: React.FC<NavigationProps> = ({
     isHardwareOnline
   } = useTelemetry();
 
-  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
-
   const unacknowledgedAlertsCount = alerts.filter(
     (a) => a.status === 'ACTIVE_UNACKNOWLEDGED' && a.severity === 'CRITICAL'
   ).length;
 
   const handleSelect = (id: ScreenId) => {
     onSelectScreen(id);
-    setMoreMenuOpen(false);
   };
 
   return (
@@ -89,7 +84,7 @@ export const Navigation: React.FC<NavigationProps> = ({
               className="pulsing-dot"
               style={{ backgroundColor: isHardwareOnline ? '#16A34A' : '#DC2626' }}
             />
-            <span>{isHardwareOnline ? 'ESP32 LIVE ONLINE' : 'ESP32 OFFLINE'}</span>
+            <span>{isHardwareOnline ? 'DEVICE LIVE ONLINE' : 'DEVICE OFFLINE'}</span>
           </div>
         </div>
 
@@ -157,11 +152,11 @@ export const Navigation: React.FC<NavigationProps> = ({
           </button>
 
           <button
-            className={`desktop-tab-btn ${activeScreen === 'firebase' ? 'active' : ''}`}
-            onClick={() => onSelectScreen('firebase')}
+            className={`desktop-tab-btn ${activeScreen === 'more' ? 'active' : ''}`}
+            onClick={() => onSelectScreen('more')}
           >
-            <SettingsIcon size={18} color={activeScreen === 'firebase' ? '#15803D' : '#6B7280'} />
-            <span>Settings</span>
+            <SettingsIcon size={18} color={activeScreen === 'more' ? '#15803D' : '#6B7280'} />
+            <span>More Hub</span>
           </button>
         </nav>
 
@@ -183,7 +178,7 @@ export const Navigation: React.FC<NavigationProps> = ({
             <NotificationBellIcon
               size={22}
               color="#111827"
-              badge={unacknowledgedAlertsCount > 0 ? unacknowledgedAlertsCount : 2}
+              badge={unacknowledgedAlertsCount > 0 ? unacknowledgedAlertsCount : undefined}
             />
           </button>
 
@@ -217,14 +212,14 @@ export const Navigation: React.FC<NavigationProps> = ({
                 }}
               />
               <span style={{ fontSize: '9.5px', fontWeight: 700, color: isHardwareOnline ? '#15803D' : '#DC2626' }}>
-                {isHardwareOnline ? 'ESP32 ONLINE' : 'ESP32 OFFLINE'}
+                {isHardwareOnline ? 'DEVICE ONLINE' : 'DEVICE OFFLINE'}
               </span>
             </div>
           </div>
         </div>
 
         <div className="header-actions">
-          {/* Notification Bell with red badge '2' */}
+          {/* Notification Bell */}
           <button
             onClick={() => onSelectScreen('alerts')}
             className="header-icon-btn"
@@ -233,7 +228,7 @@ export const Navigation: React.FC<NavigationProps> = ({
             <NotificationBellIcon
               size={22}
               color="#111827"
-              badge={unacknowledgedAlertsCount > 0 ? unacknowledgedAlertsCount : 2}
+              badge={unacknowledgedAlertsCount > 0 ? unacknowledgedAlertsCount : undefined}
             />
           </button>
 
@@ -298,225 +293,25 @@ export const Navigation: React.FC<NavigationProps> = ({
           <NotificationBellIcon
             size={22}
             color={activeScreen === 'alerts' ? '#15803D' : '#9CA3AF'}
-            badge={unacknowledgedAlertsCount > 0 ? unacknowledgedAlertsCount : 2}
+            badge={unacknowledgedAlertsCount > 0 ? unacknowledgedAlertsCount : undefined}
           />
           <span>Alerts</span>
         </button>
 
-        {/* 5. More */}
-        {(() => {
-          const isMoreActive = moreMenuOpen || ['fuel', 'diagnostics', 'firebase', 'history', 'profile'].includes(activeScreen);
-          return (
-            <button
-              className={`nav-tab-item ${isMoreActive ? 'active' : ''}`}
-              onClick={() => setMoreMenuOpen(!moreMenuOpen)}
-            >
-              <MenuHamburgerIcon
-                size={22}
-                color={isMoreActive ? '#15803D' : '#9CA3AF'}
-              />
-              <span style={{ color: isMoreActive ? '#15803D' : undefined, fontWeight: isMoreActive ? 700 : 500 }}>
-                More
-              </span>
-            </button>
-          );
-        })()}
+        {/* 5. More Hub */}
+        <button
+          className={`nav-tab-item ${['more', 'fuel', 'diagnostics', 'firebase', 'history'].includes(activeScreen) ? 'active' : ''}`}
+          onClick={() => handleSelect('more')}
+        >
+          <MenuHamburgerIcon
+            size={22}
+            color={['more', 'fuel', 'diagnostics', 'firebase', 'history'].includes(activeScreen) ? '#15803D' : '#9CA3AF'}
+          />
+          <span style={{ color: ['more', 'fuel', 'diagnostics', 'firebase', 'history'].includes(activeScreen) ? '#15803D' : undefined, fontWeight: ['more', 'fuel', 'diagnostics', 'firebase', 'history'].includes(activeScreen) ? 700 : 500 }}>
+            More
+          </span>
+        </button>
       </nav>
-
-      {/* MORE SCREEN DRAWER / MODAL */}
-      {moreMenuOpen && (
-        <div className="brutal-modal-backdrop" onClick={() => setMoreMenuOpen(false)}>
-          <div
-            className="ios-card"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              maxWidth: '420px',
-              width: '92%',
-              margin: 'auto',
-              borderRadius: '20px',
-              padding: '18px'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-              <span style={{ fontSize: '17px', fontWeight: 700, color: '#111827' }}>
-                Additional Tools &amp; Settings
-              </span>
-              <button
-                onClick={() => setMoreMenuOpen(false)}
-                className="header-icon-btn"
-                style={{ padding: '4px' }}
-              >
-                <CloseIcon size={16} color="#6B7280" />
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <button
-                onClick={() => handleSelect('profile')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '12px 14px',
-                  borderRadius: '12px',
-                  border: activeScreen === 'profile' ? '1.5px solid #16A34A' : '1px solid #E5E7EB',
-                  backgroundColor: activeScreen === 'profile' ? '#F0FDF4' : '#FFFFFF',
-                  cursor: 'pointer',
-                  textAlign: 'left'
-                }}
-              >
-                <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <UserAvatarIcon size={22} />
-                </div>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: '14px', color: '#111827' }}>Account &amp; Security Profile</div>
-                  <div style={{ fontSize: '11.5px', color: '#6B7280' }}>Sohan Rai &bull; Siren alarm &amp; emergency dispatch</div>
-                </div>
-              </button>
-
-              <button
-                onClick={() => handleSelect('fuel')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '12px 14px',
-                  borderRadius: '12px',
-                  border: '1px solid #E5E7EB',
-                  backgroundColor: '#FFFFFF',
-                  cursor: 'pointer',
-                  textAlign: 'left'
-                }}
-              >
-                <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <FuelPumpIcon size={20} color="#15803D" />
-                </div>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: '14px', color: '#111827' }}>Fuel Analytics &amp; Calibration</div>
-                  <div style={{ fontSize: '11.5px', color: '#6B7280' }}>5-point resistance calibration &amp; dL/dt chart</div>
-                </div>
-              </button>
-
-              <button
-                onClick={() => handleSelect('diagnostics')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '12px 14px',
-                  borderRadius: '12px',
-                  border: '1px solid #E5E7EB',
-                  backgroundColor: '#FFFFFF',
-                  cursor: 'pointer',
-                  textAlign: 'left'
-                }}
-              >
-                <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <DiagnosticsChipIcon size={20} color="#2563EB" />
-                </div>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: '14px', color: '#111827' }}>Hardware Link &amp; Sensor Pins</div>
-                  <div style={{ fontSize: '11.5px', color: '#6B7280' }}>ESP32 GPIO 34, 25, 26, 22, 23 telemetry</div>
-                </div>
-              </button>
-
-              <button
-                onClick={() => handleSelect('history')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '12px 14px',
-                  borderRadius: '12px',
-                  border: '1px solid #E5E7EB',
-                  backgroundColor: '#FFFFFF',
-                  cursor: 'pointer',
-                  textAlign: 'left'
-                }}
-              >
-                <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <HistoryLogIcon size={20} color="#374151" />
-                </div>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: '14px', color: '#111827' }}>Security Event Logs</div>
-                  <div style={{ fontSize: '11.5px', color: '#6B7280' }}>Audit trail of fuel drops &amp; ignition events</div>
-                </div>
-              </button>
-
-              <button
-                onClick={() => handleSelect('firebase')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '12px 14px',
-                  borderRadius: '12px',
-                  border: '1px solid #E5E7EB',
-                  backgroundColor: '#FFFFFF',
-                  cursor: 'pointer',
-                  textAlign: 'left'
-                }}
-              >
-                <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <SettingsIcon size={20} color="#D97706" />
-                </div>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: '14px', color: '#111827' }}>Device Credentials &amp; Cloud Bridge</div>
-                  <div style={{ fontSize: '11.5px', color: '#6B7280' }}>Auth tokens, template IDs &amp; Firebase setup</div>
-                </div>
-              </button>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '6px' }}>
-                <button
-                  onClick={toggleAudioMute}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px',
-                    padding: '10px',
-                    borderRadius: '10px',
-                    border: '1px solid #E5E7EB',
-                    backgroundColor: '#F9FAFB',
-                    cursor: 'pointer',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    color: '#374151'
-                  }}
-                >
-                  {isAudioMuted ? <VolumeMuteIcon size={16} /> : <VolumeHighIcon size={16} />}
-                  <span>{isAudioMuted ? 'UNMUTE ALARM' : 'MUTE ALARM'}</span>
-                </button>
-
-                {canInstall && (
-                  <button
-                    onClick={() => {
-                      setMoreMenuOpen(false);
-                      onOpenInstallPrompt();
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                      padding: '10px',
-                      borderRadius: '10px',
-                      border: '1px solid #16A34A',
-                      backgroundColor: '#F0FDF4',
-                      cursor: 'pointer',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      color: '#15803D'
-                    }}
-                  >
-                    INSTALL APP (PWA)
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 };

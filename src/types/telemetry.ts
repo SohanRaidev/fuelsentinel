@@ -27,6 +27,7 @@ export interface VehicleConfig {
   theftDropRateThresholdLpm: number;
   emergencyContactPhone: string;
   geofenceRadiusMeters: number;
+  blynkAuthToken?: string;
 }
 
 export interface FuelTelemetry {

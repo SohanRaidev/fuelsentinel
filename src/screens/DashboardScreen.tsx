@@ -8,13 +8,12 @@
 // 6. Recent Alert & Current Location Duo Cards
 // 7. Open Live Location Action Card
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useTelemetry } from '../context/TelemetryContext';
 import { InteractiveRouteMap } from '../components/InteractiveRouteMap';
 import {
   FuelPumpIcon,
   CarChassisIcon,
-  ChevronDownIcon,
   ChevronRightIcon,
   ArrowDownTrendIcon,
   PowerCircleIcon,
@@ -23,10 +22,7 @@ import {
   ExternalLinkIcon,
   FoldedMapIcon,
   WarningAlertBoxIcon,
-  LocationPinBoxIcon,
-  CloseIcon,
-  SettingsIcon,
-  CheckmarkIcon
+  LocationPinBoxIcon
 } from '../components/Icons';
 import type { ScreenId } from '../components/Navigation';
 
@@ -36,16 +32,19 @@ interface DashboardScreenProps {
 
 export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) => {
   const {
-    vehicles,
-    activeVehicleId,
+    vehicles: _vehicles,
+    activeVehicleId: _activeVehicleId,
     vehicle,
-    switchVehicle,
-    updateActiveVehicle,
+    switchVehicle: _switchVehicle,
+    updateActiveVehicle: _updateActiveVehicle,
     fuel,
+    fuelHistory,
     security,
     gps,
     hardwarePins,
     trips,
+    alerts,
+    blynkConfig,
     isHardwareOnline,
     triggerHardwareSync
   } = useTelemetry();
@@ -53,35 +52,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) 
   const totalTripsDistance = trips.reduce((acc, t) => acc + t.distanceKm, 0);
   const totalTripsBurn = trips.reduce((acc, t) => acc + t.fuelConsumedLitres, 0);
   const totalTripsLost = trips.reduce((acc, t) => acc + t.fuelLostLitres, 0);
-
-  const [vehicleModalOpen, setVehicleModalOpen] = useState(false);
-  const [editName, setEditName] = useState(vehicle.name);
-  const [editPlate, setEditPlate] = useState(vehicle.plate);
-  const [editCapacity, setEditCapacity] = useState(String(vehicle.tankCapacityLitres));
-  const [editSaved, setEditSaved] = useState(false);
-
-  const openVehicleModal = () => {
-    setEditName(vehicle.name);
-    setEditPlate(vehicle.plate);
-    setEditCapacity(String(vehicle.tankCapacityLitres));
-    setEditSaved(false);
-    setVehicleModalOpen(true);
-  };
-
-  const handleSaveVehicle = (e: React.FormEvent) => {
-    e.preventDefault();
-    const cap = parseFloat(editCapacity) || 80;
-    updateActiveVehicle({
-      name: editName.trim() || 'Vehicle 1',
-      plate: editPlate.trim().toUpperCase() || 'MH 12 AB 1234',
-      tankCapacityLitres: cap
-    });
-    setEditSaved(true);
-    setTimeout(() => {
-      setVehicleModalOpen(false);
-      setEditSaved(false);
-    }, 500);
-  };
 
   // Google Maps link pointing directly to vehicle coordinates
   const gmapsUrl = (hardwarePins.v5 && hardwarePins.v5.startsWith('http'))
@@ -108,23 +78,57 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) 
   const ringTrackPath = describeArc(41, 41, 31, 135, 405);
   const ringActivePath = describeArc(41, 41, 31, 135, 135 + Math.max(2, (clampedPct / 100) * 270));
 
+  // Real Hourly Fuel Consumption / Refill Delta
+  const oneHourAgo = Date.now() - 3600000;
+  const historyPoint1Hr = fuelHistory.find((p) => p.timestamp <= oneHourAgo) || fuelHistory[0];
+  const hourlyDelta = historyPoint1Hr ? Math.round((clampedPct - historyPoint1Hr.percentage) * 10) / 10 : 0;
+
+  // Dynamic Real Device Connectivity Elapsed Time
+  const getLastSyncText = () => {
+    if (!blynkConfig.lastSyncTime) {
+      return isHardwareOnline ? 'Just now' : 'Awaiting Link';
+    }
+    const elapsedSec = Math.floor((Date.now() - blynkConfig.lastSyncTime) / 1000);
+    if (elapsedSec < 10) return 'Just now';
+    if (elapsedSec < 60) return `${elapsedSec}s ago`;
+    const elapsedMin = Math.floor(elapsedSec / 60);
+    if (elapsedMin < 60) return `${elapsedMin}m ago`;
+    return new Date(blynkConfig.lastSyncTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
   return (
     <div className="dashboard-page-container">
       <div className="dashboard-desktop-grid">
-        {/* LEFT COLUMN: VEHICLE SELECTOR, HERO FUEL & TRIAD */}
+        {/* LEFT COLUMN: VEHICLE HEADER, HERO FUEL & TRIAD */}
         <div className="dashboard-col-left">
-          {/* 1. VEHICLE SELECTOR CARD */}
-          <div className="ios-card vehicle-selector-card" onClick={openVehicleModal}>
+          {/* 1. VEHICLE HEADER CARD (CLEAN & STATIONARY) */}
+          <div className="ios-card vehicle-selector-card" style={{ cursor: 'default' }}>
             <div className="vehicle-info-left">
               <div className="vehicle-car-icon-box">
-                <CarChassisIcon size={22} color="#111827" />
+                <CarChassisIcon size={22} color="#15803D" />
               </div>
               <div className="vehicle-text-group">
                 <div className="vehicle-name">{vehicle.name}</div>
-                <div className="vehicle-plate">{vehicle.plate}</div>
+                <div className="vehicle-plate">
+                  <span>{vehicle.plate}</span> &bull; <span>{vehicle.tankCapacityLitres}L Tank</span>
+                </div>
               </div>
             </div>
-            <ChevronDownIcon size={20} color="#6B7280" />
+            <button
+              onClick={() => onNavigate('setup')}
+              style={{
+                fontSize: '11px',
+                fontWeight: 700,
+                color: '#15803D',
+                backgroundColor: '#ECFDF5',
+                border: '1px solid #BBF7D0',
+                padding: '6px 12px',
+                borderRadius: '8px',
+                cursor: 'pointer'
+              }}
+            >
+              Switch Vehicle
+            </button>
           </div>
 
           {/* HARDWARE CONNECTION STATUS PILL */}
@@ -150,7 +154,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) 
                 }}
               />
               <span style={{ fontSize: '11.5px', fontWeight: 700, color: isHardwareOnline ? '#15803D' : '#DC2626' }}>
-                {isHardwareOnline ? 'ESP32 Device Online • Live Telemetry' : 'ESP32 Device Offline (Powered Off / Disconnected)'}
+                {isHardwareOnline ? 'Device Online • Live Telemetry' : 'Device Offline (Awaiting Connection)'}
               </span>
             </div>
             <button
@@ -203,11 +207,17 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) 
 
             {/* Right: Trend Pill Badge */}
             <div className="trend-badge-pill">
-              <div className="trend-badge-top">
-                <ArrowDownTrendIcon size={12} color="#15803D" />
-                <span>-2%</span>
+              <div className="trend-badge-top" style={{ color: hourlyDelta < 0 ? '#DC2626' : '#15803D' }}>
+                {hourlyDelta < 0 ? (
+                  <ArrowDownTrendIcon size={12} color="#DC2626" />
+                ) : (
+                  <span style={{ fontSize: '12px', fontWeight: 800 }}>&bull;</span>
+                )}
+                <span>{hourlyDelta === 0 ? '0.0%' : hourlyDelta > 0 ? `+${hourlyDelta}%` : `${hourlyDelta}%`}</span>
               </div>
-              <div className="trend-badge-sub">in last 1 hr</div>
+              <div className="trend-badge-sub">
+                {hourlyDelta === 0 ? 'Stable in 1 hr' : hourlyDelta < 0 ? 'in last 1 hr' : 'Refueled'}
+              </div>
             </div>
           </div>
 
@@ -240,8 +250,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) 
             <div className="ios-card metric-mini-card">
               <BarChartSignalIcon size={34} />
               <div className="metric-label">Last Update</div>
-              <div className="metric-value">2 min ago</div>
-              <div className="metric-sub">Live Telemetry</div>
+              <div className="metric-value">{getLastSyncText()}</div>
+              <div className="metric-sub">{isHardwareOnline ? 'Device Live' : 'Device Offline'}</div>
             </div>
           </div>
 
@@ -254,12 +264,30 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) 
               title="Open Security Alerts"
             >
               <div className="action-split-content">
-                <WarningAlertBoxIcon size={36} />
+                {alerts.length > 0 ? (
+                  <WarningAlertBoxIcon size={36} />
+                ) : (
+                  <SecurityShieldIcon size={36} isSecure={true} />
+                )}
                 <div className="action-split-text">
-                  <div className="action-card-label">Recent Alert</div>
-                  <div className="action-card-val">Fuel drop detected</div>
+                  <div className="action-card-label">
+                    {alerts.length > 0 ? `Active Alert (${alerts.length})` : 'Security Status'}
+                  </div>
+                  <div
+                    className="action-card-val"
+                    style={{ color: alerts.length > 0 ? '#DC2626' : '#15803D' }}
+                  >
+                    {alerts.length > 0 ? alerts[0].title : 'Perimeter Secure'}
+                  </div>
                   <div className="action-card-sub">
-                    Level decreased by 10%<br />9:12 PM
+                    {alerts.length > 0 ? (
+                      <>
+                        {alerts[0].description}<br />
+                        {new Date(alerts[0].timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </>
+                    ) : (
+                      'No active alerts • Zero fuel loss'
+                    )}
                   </div>
                 </div>
               </div>
@@ -280,7 +308,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) 
                     {gps.latitude.toFixed(4)}, {gps.longitude.toFixed(4)}
                   </div>
                   <div className="action-card-sub">
-                    Mumbai, Maharashtra<br />Live Fix
+                    Live GPS Telemetry<br />{gps.satellitesInView} Satellites
                   </div>
                 </div>
               </div>
@@ -448,137 +476,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) 
       </div>
     </div>
   </div>
-
-      {/* VEHICLE PROFILE & FLEET SWITCHER MODAL */}
-      {vehicleModalOpen && (
-        <div className="brutal-modal-backdrop" onClick={() => setVehicleModalOpen(false)}>
-          <div
-            className="ios-card"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              maxWidth: '420px',
-              width: '92%',
-              margin: 'auto',
-              borderRadius: '20px',
-              padding: '20px'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <SettingsIcon size={18} color="#15803D" />
-                <span style={{ fontSize: '17px', fontWeight: 700, color: '#111827' }}>
-                  Vehicles &amp; Fleet
-                </span>
-              </div>
-              <button
-                onClick={() => setVehicleModalOpen(false)}
-                className="header-icon-btn"
-                style={{ padding: '4px' }}
-              >
-                <CloseIcon size={16} color="#6B7280" />
-              </button>
-            </div>
-
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ fontSize: '11.5px', fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>
-                Select Active Vehicle
-              </label>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {vehicles.map((v) => {
-                  const isCur = v.id === activeVehicleId;
-                  return (
-                    <button
-                      key={v.id}
-                      onClick={() => switchVehicle(v.id)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '10px 14px',
-                        borderRadius: '12px',
-                        border: isCur ? '2px solid #16A34A' : '1px solid #E5E7EB',
-                        backgroundColor: isCur ? '#F0FDF4' : '#FFFFFF',
-                        cursor: 'pointer',
-                        textAlign: 'left'
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontWeight: 700, fontSize: '14px', color: '#111827' }}>{v.name}</div>
-                        <div style={{ fontSize: '12px', color: '#6B7280' }}>{v.plate}</div>
-                      </div>
-                      <span style={{ fontSize: '12px', fontWeight: 600, color: isCur ? '#15803D' : '#6B7280' }}>
-                        {v.tankCapacityLitres}L Tank
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <form onSubmit={handleSaveVehicle}>
-              <div style={{ fontSize: '11.5px', fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', marginBottom: '8px' }}>
-                Edit Vehicle Details
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px' }}>
-                <div>
-                  <label style={{ fontSize: '12px', color: '#374151', display: 'block', marginBottom: '3px' }}>Vehicle Name</label>
-                  <input
-                    type="text"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '13px' }}
-                    placeholder="e.g. Vehicle 1"
-                  />
-                </div>
-
-                <div>
-                  <label style={{ fontSize: '12px', color: '#374151', display: 'block', marginBottom: '3px' }}>License Plate Number</label>
-                  <input
-                    type="text"
-                    value={editPlate}
-                    onChange={(e) => setEditPlate(e.target.value)}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '13px' }}
-                    placeholder="e.g. MH 12 AB 1234"
-                  />
-                </div>
-
-                <div>
-                  <label style={{ fontSize: '12px', color: '#374151', display: 'block', marginBottom: '3px' }}>Fuel Tank Capacity (Litres)</label>
-                  <input
-                    type="number"
-                    value={editCapacity}
-                    onChange={(e) => setEditCapacity(e.target.value)}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '13px' }}
-                    placeholder="e.g. 50"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  backgroundColor: '#15803D',
-                  color: '#FFFFFF',
-                  fontWeight: 700,
-                  fontSize: '14px',
-                  borderRadius: '12px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px'
-                }}
-              >
-                {editSaved ? <CheckmarkIcon size={16} color="#FFFFFF" /> : null}
-                {editSaved ? 'SAVED!' : 'SAVE VEHICLE PROFILE'}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
+</div>
   );
 };

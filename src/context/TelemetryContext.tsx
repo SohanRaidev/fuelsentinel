@@ -84,15 +84,31 @@ export interface TelemetryContextType {
   toggleLedCheck: () => Promise<void>;
   exportHistoryCsv: () => void;
   clearHistory: () => void;
+  resetFleetToDefaults: () => void;
 }
 
 const DEFAULT_FLEET: VehicleConfig[] = [
   {
-    id: 'VEH-FS-849',
-    name: 'Toyota Hilux 2.8L GD-6 4x4',
-    plate: 'KDD 849X',
-    vin: 'MROEX89G500192841',
+    id: 'VEH-FS-01',
+    name: 'Divine Hauler 01',
+    plate: 'KA-01-DF-2026',
+    vin: 'DF89G500192841',
     tankCapacityLitres: 80,
+    fuelType: 'DIESEL',
+    tankGeometry: 'RECTANGULAR',
+    senderStandard: '240-33',
+    calibrationPoints: STANDARD_CALIBRATIONS['240-33'],
+    theftDropRateThresholdLpm: 1.2,
+    emergencyContactPhone: '+91 98200 12345',
+    geofenceRadiusMeters: 100,
+    blynkAuthToken: '6SR0JUj39EfvIM0Ke-VtPwGR-tUvh43e'
+  },
+  {
+    id: 'VEH-FS-02',
+    name: 'Divine Express 02',
+    plate: 'KA-19-DF-4412',
+    vin: 'DF1FTFW1ED7NFB',
+    tankCapacityLitres: 65,
     fuelType: 'DIESEL',
     tankGeometry: 'RECTANGULAR',
     senderStandard: '240-33',
@@ -102,25 +118,11 @@ const DEFAULT_FLEET: VehicleConfig[] = [
     geofenceRadiusMeters: 100
   },
   {
-    id: 'VEH-FS-102',
-    name: 'Ford Ranger 2.0 Bi-Turbo',
-    plate: 'KBZ 102M',
-    vin: '1FTFW1ED7NFB19203',
-    tankCapacityLitres: 80,
-    fuelType: 'DIESEL',
-    tankGeometry: 'RECTANGULAR',
-    senderStandard: '240-33',
-    calibrationPoints: STANDARD_CALIBRATIONS['240-33'],
-    theftDropRateThresholdLpm: 1.2,
-    emergencyContactPhone: '+91 98200 12345',
-    geofenceRadiusMeters: 100
-  },
-  {
-    id: 'VEH-FS-401',
-    name: 'Isuzu D-Max Heavy Fleet',
-    plate: 'KCA 401P',
-    vin: 'MPATFR85JHT019284',
-    tankCapacityLitres: 76,
+    id: 'VEH-FS-03',
+    name: 'Divine Logistics 03',
+    plate: 'MH-04-DF-9901',
+    vin: 'DFMPATFR85JHT0',
+    tankCapacityLitres: 120,
     fuelType: 'DIESEL',
     tankGeometry: 'RECTANGULAR',
     senderStandard: '240-33',
@@ -520,6 +522,9 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const target = vehicles.find((v) => v.id === id);
     if (target) {
       setActiveVehicleId(id);
+      if (target.blynkAuthToken && target.blynkAuthToken !== blynkConfig.authToken) {
+        setBlynkConfig((prev) => ({ ...prev, authToken: target.blynkAuthToken! }));
+      }
       // Recalculate fuel for new vehicle tank capacity
       setFuel((prev) => {
         const litres = Math.round((prev.percentage / 100) * target.tankCapacityLitres * 10) / 10;
@@ -531,6 +536,13 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         };
       });
     }
+  };
+
+  const resetFleetToDefaults = () => {
+    setVehicles(DEFAULT_FLEET);
+    setActiveVehicleId(DEFAULT_FLEET[0].id);
+    localStorage.setItem('fs_fleet', JSON.stringify(DEFAULT_FLEET));
+    localStorage.setItem('fs_active_vehicle_id', DEFAULT_FLEET[0].id);
   };
 
   const updateActiveVehicle = (cfg: Partial<VehicleConfig>) => {
@@ -1133,7 +1145,8 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         toggleBlynkLedCheck,
         toggleLedCheck: toggleBlynkLedCheck,
         exportHistoryCsv,
-        clearHistory
+        clearHistory,
+        resetFleetToDefaults
       }}
     >
       {children}

@@ -17,6 +17,8 @@ import { VehicleSetupScreen } from './screens/VehicleSetupScreen';
 import { AuthSettingsScreen } from './screens/AuthSettingsScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
 import { AuthScreen } from './screens/AuthScreen';
+import { MoreHubScreen } from './screens/MoreHubScreen';
+import { TheftAlarmModal } from './components/TheftAlarmModal';
 
 interface MainCockpitProps {
   onLogout: () => void;
@@ -66,7 +68,8 @@ const MainCockpit: React.FC<MainCockpitProps> = ({ onLogout }) => {
           'diagnostics',
           'setup',
           'firebase',
-          'profile'
+          'profile',
+          'more'
         ].includes(hash)
       ) {
         setActiveScreen(hash);
@@ -105,6 +108,12 @@ const MainCockpit: React.FC<MainCockpitProps> = ({ onLogout }) => {
           {activeScreen === 'diagnostics' && <DiagnosticsScreen />}
           {activeScreen === 'setup' && <VehicleSetupScreen />}
           {activeScreen === 'firebase' && <AuthSettingsScreen />}
+          {activeScreen === 'more' && (
+            <MoreHubScreen
+              onNavigate={handleSelectScreen}
+              onOpenInstallPrompt={() => setInstallModalOpen(true)}
+            />
+          )}
           {activeScreen === 'profile' && (
             <ProfileScreen
               onOpenInstallPrompt={() => setInstallModalOpen(true)}
@@ -113,6 +122,9 @@ const MainCockpit: React.FC<MainCockpitProps> = ({ onLogout }) => {
           )}
         </div>
       </main>
+
+      {/* High-Priority Theft Alarm Pop-up Modal */}
+      <TheftAlarmModal />
 
       {/* PWA Install Instructions Modal */}
       <PwaPrompt isOpen={installModalOpen} onClose={() => setInstallModalOpen(false)} />
