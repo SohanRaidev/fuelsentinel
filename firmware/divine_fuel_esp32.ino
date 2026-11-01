@@ -45,6 +45,11 @@
 const float TANK_CAPACITY_LITRES  = 150.0; // Total tank volume (Adjust to your vehicle)
 const float THEFT_DROP_THRESH_PCT = 1.5;   // Trigger alarm if fuel drops >= 1.5% while parked (~2.25L)
 
+// Physical Tamper Loop Switch:
+// Keep false when testing on desk/bench without a wire from GPIO 26 to GND.
+// Set to true once a physical anti-tamper wire loop to GND is installed on the vehicle.
+const bool ENABLE_TAMPER_LOOP     = false;
+
 // Default Voltage Calibration (Inversely proportional to fuel level)
 const float DEFAULT_V_FULL  = 0.30; // Volts when tank is 100% FULL
 const float DEFAULT_V_EMPTY = 1.75; // Volts when tank is 0% EMPTY
@@ -141,7 +146,13 @@ void readFilteredFuel() {
 
 void readIgnitionAndTamper() {
   ignitionStatus = (digitalRead(PIN_IGNITION_SENSE) == HIGH) ? 1 : 0;
-  tamperStatus   = (digitalRead(PIN_TAMPER_LOOP) == LOW) ? 1 : 0;
+  
+  if (ENABLE_TAMPER_LOOP) {
+    // GPIO 26 has INPUT_PULLUP. Normal: tied to GND (LOW). Cut/severed: floats HIGH (1).
+    tamperStatus = (digitalRead(PIN_TAMPER_LOOP) == HIGH) ? 1 : 0;
+  } else {
+    tamperStatus = 0;
+  }
 
   // Detect Key OFF Transition (Driver turns engine off and parks)
   if (lastIgnitionState == 1 && ignitionStatus == 0) {
@@ -161,8 +172,8 @@ void readIgnitionAndTamper() {
 void evaluateTheftSecurity() {
   isTheftAlarm = false;
 
-  // 1. TAMPER LOOP SECURITY CHECK
-  if (tamperStatus == 1) {
+  // 1. TAMPER LOOP SECURITY CHECK (If physical tamper loop enabled)
+  if (ENABLE_TAMPER_LOOP && tamperStatus == 1) {
     isTheftAlarm = true;
     theftAlertMsg = "🚨 CRITICAL: TAMPER WIRE SEVERED!";
   }

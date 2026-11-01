@@ -596,6 +596,12 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const resetTamper = () => {
+    audioAlert.stopAlarm();
+    if (blynkConfig.authToken) {
+      fetch(`https://blynk.cloud/external/api/update?token=${blynkConfig.authToken}&v2=OK`, { mode: 'cors' }).catch(() => {});
+      fetch(`https://blynk.cloud/external/api/update?token=${blynkConfig.authToken}&v9=0`, { mode: 'cors' }).catch(() => {});
+    }
+    setBlynkPins((prev) => ({ ...prev, v2: 'OK', v9: 0 }));
     setSecurity((prev) => ({
       ...prev,
       tamper: 'SECURE',
@@ -603,7 +609,6 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       theftAlarmActive: false,
       theftAlarmReason: null
     }));
-    audioAlert.stopAlarm();
   };
 
   // Dismiss / Silence any active alert
@@ -612,10 +617,16 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (blynkPins.v2) {
       dismissedMessagesRef.current.add(blynkPins.v2.trim());
     }
+    if (blynkConfig.authToken) {
+      fetch(`https://blynk.cloud/external/api/update?token=${blynkConfig.authToken}&v2=OK`, { mode: 'cors' }).catch(() => {});
+      fetch(`https://blynk.cloud/external/api/update?token=${blynkConfig.authToken}&v9=0`, { mode: 'cors' }).catch(() => {});
+    }
+    setBlynkPins((prev) => ({ ...prev, v2: 'OK', v9: 0 }));
     setSecurity((prev) => ({
       ...prev,
       theftAlarmActive: false,
-      theftAlarmReason: null
+      theftAlarmReason: null,
+      tamper: 'SECURE'
     }));
     if (alertId) {
       setAlerts((prev) =>
@@ -784,13 +795,21 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           return next.slice(-15);
         });
 
+        // CRITICAL PROTECTION: If hardware is NOT connected (Device Offline),
+        // any values in Blynk Cloud are stale records from a previous session.
+        // An offline device must NEVER trigger an emergency siren or ring the phone!
+        if (!isHwConnected) {
+          audioAlert.stopAlarm();
+        }
+
         // Security logic: V6 = Ignition, V9 = Tamper sensor loop (0=SECURE, 1=TRIPPED)
-        const isIgnitionOn = parsedPins.v6 === 1;
-        const isTampered = parsedPins.v9 === 1; // Physical wire severed
+        // Live alarm evaluation is strictly active ONLY when hardware is verified online
+        const isIgnitionOn = isHwConnected && parsedPins.v6 === 1;
+        const isTampered = isHwConnected && parsedPins.v9 === 1; // Physical wire severed
         const rawTheftMsg = parsedPins.v2.trim();
         const isDismissed = dismissedMessagesRef.current.has(rawTheftMsg);
-        const hasTheftMsg = rawTheftMsg !== '' && rawTheftMsg !== 'OK' && rawTheftMsg !== '0' && !isDismissed;
-        const isAlarm = isTampered || Boolean(hasTheftMsg);
+        const hasTheftMsg = isHwConnected && rawTheftMsg !== '' && rawTheftMsg !== 'OK' && rawTheftMsg !== '0' && !isDismissed;
+        const isAlarm = isHwConnected && (isTampered || Boolean(hasTheftMsg));
 
         setSecurity((prev) => {
           if (isAlarm && !prev.theftAlarmActive) {
@@ -798,14 +817,18 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               audioAlert.startAlarmSiren();
             }
             triggerTheftNotification(activeVehicle.plate, (parsedPins.v8 / 100) * activeVehicle.tankCapacityLitres);
+          } else if (!isAlarm && prev.theftAlarmActive) {
+            audioAlert.stopAlarm();
           }
           return {
             ...prev,
             ignition: isIgnitionOn ? 'ON' : 'OFF',
             tamper: isTampered ? 'TRIPPED' : 'SECURE',
             theftAlarmActive: isAlarm,
-            theftAlarmReason: hasTheftMsg ? parsedPins.v2 : isTampered ? 'Physical sensor wire severed!' : null,
-            theftDropVolumeLitres: (parsedPins.v8 / 100) * activeVehicle.tankCapacityLitres
+            theftAlarmReason: isAlarm
+              ? (hasTheftMsg ? parsedPins.v2 : isTampered ? 'Physical sensor wire severed!' : null)
+              : null,
+            theftDropVolumeLitres: isAlarm ? (parsedPins.v8 / 100) * activeVehicle.tankCapacityLitres : 0
           };
         });
 
@@ -927,18 +950,30 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           lastError: null
         }));
       } else {
+        audioAlert.stopAlarm();
         setBlynkConfig((prev) => ({
           ...prev,
           isConnected: false,
+          isHardwareOnline: false,
           lastError: 'Hardware link offline'
+        }));
+        setDiagnostics((prev) => ({
+          ...prev,
+          onlineState: 'OFFLINE'
         }));
       }
     } catch (err: unknown) {
+      audioAlert.stopAlarm();
       const msg = err instanceof Error ? err.message : 'Network error';
       setBlynkConfig((prev) => ({
         ...prev,
         isConnected: false,
+        isHardwareOnline: false,
         lastError: msg
+      }));
+      setDiagnostics((prev) => ({
+        ...prev,
+        onlineState: 'OFFLINE'
       }));
     }
   }, [blynkConfig.authToken, activeVehicle.tankCapacityLitres]);

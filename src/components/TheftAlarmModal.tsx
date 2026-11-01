@@ -17,7 +17,6 @@ export const TheftAlarmModal: React.FC = () => {
     vehicle,
     gps,
     isAudioMuted,
-    toggleAudioMute,
     resetTamper,
     dismissAlert
   } = useTelemetry();
@@ -29,9 +28,8 @@ export const TheftAlarmModal: React.FC = () => {
   const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=${gps.latitude},${gps.longitude}`;
 
   const handleSilence = () => {
-    if (!isAudioMuted) {
-      toggleAudioMute();
-    }
+    resetTamper();
+    dismissAlert();
   };
 
   const handleDismiss = () => {
