@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <rect width="64" height="64" fill="#EFECE6" />
+  <rect x="4" y="4" width="56" height="56" fill="#F4F1EA" stroke="#111215" stroke-width="3" />
+  <!-- Shield/Canister geometry -->
+  <path d="M16 16 H48 V38 L32 50 L16 38 Z" fill="#111215" />
+  <!-- Fuel Level Bar inside shield -->
+  <rect x="22" y="24" width="20" height="4" fill="#F59E0B" />
+  <rect x="22" y="31" width="14" height="4" fill="#F59E0B" />
+  <!-- Crosshair tick -->
+  <line x1="32" y1="8" x2="32" y2="13" stroke="#111215" stroke-width="2" />
+  <line x1="8" y1="32" x2="13" y2="32" stroke="#111215" stroke-width="2" />
+  <line x1="51" y1="32" x2="56" y2="32" stroke="#111215" stroke-width="2" />
+</svg>
