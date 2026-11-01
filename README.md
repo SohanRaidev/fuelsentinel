@@ -138,8 +138,6 @@ Vehicle IGN 12V --+ GPIO 25 (Optocoupler Input)       |
 Tamper Loop ------+ GPIO 26 (Interrupt Loop)          |
                   | GPIO 16 (RX2) <--- NEO-6M GPS TX  |
                   | GPIO 17 (TX2) ---> NEO-6M GPS RX  |
-                  | GPIO 22 ---> Transistor Siren Relay
-                  | GPIO 23 ---> Solenoid Fuel Cutoff |
 GND --------------+ GND                               |
                   +-----------------------------------+
 ```
@@ -181,11 +179,7 @@ Vehicle Ground
 ### 4. Vehicle 12V Ignition Detection (GPIO 25)
 - Connect vehicle switched 12V ignition through a **PC817 Optocoupler** (or 10k$\Omega$ / 2.2k$\Omega$ voltage divider) to **GPIO 25**.
 - When the key is turned to ACC/ON/RUN, GPIO 25 reads `HIGH`.
-- When the vehicle is parked, GPIO 25 reads `LOW`.
-
-### 5. Siren & Fuel Cutoff Relays (GPIO 22 & GPIO 23)
-- **GPIO 22**: Connects through a 2N2222 transistor to trigger a 12V 20A automotive relay powering a 110dB siren under the chassis.
-- **GPIO 23**: Connects to a 12V normally-open inline fuel line solenoid valve to prevent engine start during verified theft.
+- When the vehicle is parked, GPIO 27 reads `LOW`.
 
 ---
 

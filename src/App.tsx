@@ -16,8 +16,13 @@ import { DiagnosticsScreen } from './screens/DiagnosticsScreen';
 import { VehicleSetupScreen } from './screens/VehicleSetupScreen';
 import { AuthSettingsScreen } from './screens/AuthSettingsScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
+import { AuthScreen } from './screens/AuthScreen';
 
-const MainCockpit: React.FC = () => {
+interface MainCockpitProps {
+  onLogout: () => void;
+}
+
+const MainCockpit: React.FC<MainCockpitProps> = ({ onLogout }) => {
   const [activeScreen, setActiveScreen] = useState<ScreenId>('dashboard');
   const [installModalOpen, setInstallModalOpen] = useState(false);
   const [canInstall, setCanInstall] = useState(() => pwaManager.canInstall() || pwaManager.isIosDevice());
@@ -100,7 +105,12 @@ const MainCockpit: React.FC = () => {
           {activeScreen === 'diagnostics' && <DiagnosticsScreen />}
           {activeScreen === 'setup' && <VehicleSetupScreen />}
           {activeScreen === 'firebase' && <AuthSettingsScreen />}
-          {activeScreen === 'profile' && <ProfileScreen onOpenInstallPrompt={() => setInstallModalOpen(true)} />}
+          {activeScreen === 'profile' && (
+            <ProfileScreen
+              onOpenInstallPrompt={() => setInstallModalOpen(true)}
+              onLogout={onLogout}
+            />
+          )}
         </div>
       </main>
 
@@ -111,9 +121,27 @@ const MainCockpit: React.FC = () => {
 };
 
 export function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return localStorage.getItem('divine_fuel_authenticated') === 'true';
+  });
+
+  const handleLoginSuccess = () => {
+    localStorage.setItem('divine_fuel_authenticated', 'true');
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('divine_fuel_authenticated');
+    setIsAuthenticated(false);
+  };
+
   return (
     <TelemetryProvider>
-      <MainCockpit />
+      {!isAuthenticated ? (
+        <AuthScreen onLogin={handleLoginSuccess} />
+      ) : (
+        <MainCockpit onLogout={handleLogout} />
+      )}
     </TelemetryProvider>
   );
 }

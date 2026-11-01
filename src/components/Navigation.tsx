@@ -49,7 +49,8 @@ export const Navigation: React.FC<NavigationProps> = ({
   const {
     alerts,
     isAudioMuted,
-    toggleAudioMute
+    toggleAudioMute,
+    isHardwareOnline
   } = useTelemetry();
 
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
@@ -76,9 +77,19 @@ export const Navigation: React.FC<NavigationProps> = ({
             </div>
           </div>
 
-          <div className="desktop-conn-badge">
-            <span className="pulsing-dot" style={{ backgroundColor: '#16A34A' }} />
-            <span>ESP32 LINK ACTIVE</span>
+          <div
+            className="desktop-conn-badge"
+            style={{
+              backgroundColor: isHardwareOnline ? '#F0FDF4' : '#FEF2F2',
+              borderColor: isHardwareOnline ? '#BBF7D0' : '#FECACA',
+              color: isHardwareOnline ? '#15803D' : '#DC2626'
+            }}
+          >
+            <span
+              className="pulsing-dot"
+              style={{ backgroundColor: isHardwareOnline ? '#16A34A' : '#DC2626' }}
+            />
+            <span>{isHardwareOnline ? 'ESP32 LIVE ONLINE' : 'ESP32 OFFLINE'}</span>
           </div>
         </div>
 
@@ -118,7 +129,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                 <span className="desktop-badge-dot" />
               )}
             </span>
-            <span>Relays &amp; Alerts</span>
+            <span>Security Alerts</span>
           </button>
 
           <button
@@ -194,7 +205,22 @@ export const Navigation: React.FC<NavigationProps> = ({
       <header className="mobile-header">
         <div className="brand-group" onClick={() => onSelectScreen('dashboard')}>
           <ShieldFuelBrandIcon size={34} />
-          <span className="brand-title">Divine Fuel</span>
+          <div>
+            <span className="brand-title">Divine Fuel</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '1px' }}>
+              <span
+                style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  backgroundColor: isHardwareOnline ? '#16A34A' : '#DC2626'
+                }}
+              />
+              <span style={{ fontSize: '9.5px', fontWeight: 700, color: isHardwareOnline ? '#15803D' : '#DC2626' }}>
+                {isHardwareOnline ? 'ESP32 ONLINE' : 'ESP32 OFFLINE'}
+              </span>
+            </div>
+          </div>
         </div>
 
         <div className="header-actions">

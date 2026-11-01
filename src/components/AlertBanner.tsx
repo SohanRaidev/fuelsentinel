@@ -61,7 +61,7 @@ export const AlertBanner: React.FC<AlertBannerProps> = ({ onNavigateToSecurity }
             {alertTitle}
           </div>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--accent-critical-ink)', opacity: 0.85 }}>
-            Security sensor event recorded while parked. Tap to manage relays.
+            Security sensor event recorded while parked. Tap to view security alerts.
           </div>
         </div>
       </div>
@@ -73,7 +73,7 @@ export const AlertBanner: React.FC<AlertBannerProps> = ({ onNavigateToSecurity }
             className="btn-brutal btn-brutal-sm btn-brutal-subtle"
             style={{ fontSize: '11px', padding: '5px 10px' }}
           >
-            VIEW RELAYS
+            VIEW ALERTS
           </button>
         )}
         <button

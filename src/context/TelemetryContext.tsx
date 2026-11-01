@@ -61,14 +61,14 @@ export interface TelemetryContextType {
   startTrip: (title: string, startLoc: string) => void;
   endActiveTrip: (endLoc: string) => void;
 
+  isHardwareOnline: boolean;
+
   // Actions
   setTheme: (theme: 'light' | 'dark') => void;
   toggleAudioMute: () => void;
   testAudioAlarm: () => void;
   setConnectionMode: (mode: ConnectionMode) => void;
   simulateScenario: (scenario: SimulationScenario) => void;
-  toggleSiren: () => void;
-  toggleFuelCutoff: () => void;
   resetTamper: () => void;
   acknowledgeAlert: (alertId: string) => void;
   dispatchEmergency: (alertId: string, responderNotes: string) => void;
@@ -380,8 +380,6 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     theftAlarmReason: null,
     theftDropVolumeLitres: 0,
     theftDetectionTimestamp: null,
-    sirenRelayActive: false,
-    fuelCutoffRelayActive: false,
     lastIgnitionChangeTimestamp: Date.now() - 3600000 * 2,
     tamperLoopContinuityPercent: 100
   }));
@@ -585,31 +583,13 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     audioAlert.playBeep(1100, 180, 'square');
   };
 
-  // Hardware Relay & Alarm controls
-  const toggleSiren = () => {
-    setSecurity((prev) => {
-      const nextActive = !prev.sirenRelayActive;
-      if (nextActive && !isAudioMuted) {
-        audioAlert.startAlarmSiren();
-      } else {
-        audioAlert.stopAlarm();
-      }
-      return { ...prev, sirenRelayActive: nextActive };
-    });
-  };
-
-  const toggleFuelCutoff = () => {
-    setSecurity((prev) => ({ ...prev, fuelCutoffRelayActive: !prev.fuelCutoffRelayActive }));
-  };
-
   const resetTamper = () => {
     setSecurity((prev) => ({
       ...prev,
       tamper: 'SECURE',
       tamperLoopContinuityPercent: 100,
       theftAlarmActive: false,
-      theftAlarmReason: null,
-      sirenRelayActive: false
+      theftAlarmReason: null
     }));
     audioAlert.stopAlarm();
   };
@@ -623,8 +603,7 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setSecurity((prev) => ({
       ...prev,
       theftAlarmActive: false,
-      theftAlarmReason: null,
-      sirenRelayActive: false
+      theftAlarmReason: null
     }));
     if (alertId) {
       setAlerts((prev) =>
@@ -976,8 +955,6 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         theftAlarmReason: null,
         theftDropVolumeLitres: 0,
         theftDetectionTimestamp: null,
-        sirenRelayActive: false,
-        fuelCutoffRelayActive: false,
         lastIgnitionChangeTimestamp: now - 3600000 * 2,
         tamperLoopContinuityPercent: 100
       });
@@ -1014,8 +991,6 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         theftAlarmReason: null,
         theftDropVolumeLitres: 0,
         theftDetectionTimestamp: null,
-        sirenRelayActive: false,
-        fuelCutoffRelayActive: false,
         lastIgnitionChangeTimestamp: now - 600000,
         tamperLoopContinuityPercent: 100
       });
@@ -1039,8 +1014,6 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         theftAlarmReason: `Rapid Fuel Drop: -${drainedAmount.toFixed(1)}L drained in 2 min with IGNITION OFF! Tamper loop open.`,
         theftDropVolumeLitres: drainedAmount,
         theftDetectionTimestamp: now,
-        sirenRelayActive: true,
-        fuelCutoffRelayActive: false,
         lastIgnitionChangeTimestamp: now - 7200000,
         tamperLoopContinuityPercent: 0
       });
@@ -1137,6 +1110,7 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         activeScenario,
         trips,
         selectedTripId,
+        isHardwareOnline: blynkConfig.isHardwareOnline,
         selectTrip,
         startTrip,
         endActiveTrip,
@@ -1145,8 +1119,6 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         testAudioAlarm,
         setConnectionMode,
         simulateScenario,
-        toggleSiren,
-        toggleFuelCutoff,
         resetTamper,
         acknowledgeAlert,
         dispatchEmergency,

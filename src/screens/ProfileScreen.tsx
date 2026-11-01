@@ -16,9 +16,10 @@ import {
 
 interface ProfileScreenProps {
   onOpenInstallPrompt?: () => void;
+  onLogout?: () => void;
 }
 
-export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onOpenInstallPrompt }) => {
+export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onOpenInstallPrompt, onLogout }) => {
   const {
     vehicle,
     vehicles,
@@ -447,6 +448,41 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onOpenInstallPromp
           </div>
         </div>
       </div>
+
+      {/* 5. SESSION & AUTH LOGOUT */}
+      {onLogout && (
+        <div className="ios-card" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid #FEE2E2', backgroundColor: '#FEF2F2' }}>
+          <div>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: '#991B1B' }}>
+              Account Session
+            </div>
+            <div style={{ fontSize: '11px', color: '#B91C1C' }}>
+              Signed in as {userName} ({accountEmail})
+            </div>
+          </div>
+
+          <button
+            onClick={() => {
+              if (window.confirm('Do you want to log out and return to the Divine Fuel login screen?')) {
+                localStorage.removeItem('divine_fuel_authenticated');
+                onLogout();
+              }
+            }}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '10px',
+              border: '1px solid #EF4444',
+              backgroundColor: '#FFFFFF',
+              color: '#DC2626',
+              fontSize: '12px',
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+          >
+            Sign Out
+          </button>
+        </div>
+      )}
     </div>
   );
 };

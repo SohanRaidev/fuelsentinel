@@ -9,9 +9,7 @@
     - Rapid Siphon & Fuel Theft Detection (Ignition OFF + Volume Drop)
     - Anti-Tamper Security Wire Loop Monitoring
     - NEO-6M GPS Tracking with Dynamic Google Maps URL Generation
-    - Physical Actuator Control (110dB Siren Relay + Fuel Solenoid Cutoff)
-    - Non-Blocking Network Architecture (No freeze during cellular dead zones)
-    - Full Synchronization with Divine Fuel PWA (Datastreams V0 - V11)
+    - Full Synchronization with Divine Fuel PWA (Datastreams V0 - V9)
 
   Blynk Template ID   : TMPL3V68moLoN
   Blynk Template Name : Divine Fuel
@@ -37,8 +35,6 @@
 #define PIN_FUEL_ADC        34   // ADC1_CH6 - Tank resistance sensor (pull-up circuit)
 #define PIN_IGNITION_SENSE  27   // 12V Key Switch Ignition Sense (via optocoupler/divider)
 #define PIN_TAMPER_LOOP     26   // Anti-tamper loop to GND (INPUT_PULLUP: LOW = Normal, HIGH = Wire Cut)
-#define PIN_SIREN_RELAY     22   // 110dB Siren Horn Relay (Active HIGH)
-#define PIN_CUTOFF_VALVE    23   // Engine Fuel Line Solenoid Valve (Active HIGH = Closed)
 #define PIN_STATUS_LED       2   // Onboard ESP32 Heartbeat Diagnostic LED
 
 #define GPS_RX_PIN          16   // Connect to NEO-6M TX
@@ -46,11 +42,10 @@
 
 // ======================== VEHICLE & SECURITY CONSTANTS ======================
 
-const float TANK_CAPACITY_LITRES = 150.0; // Total tank volume (Adjust to your vehicle)
-const float THEFT_DROP_THRESH_PCT = 1.5;  // Trigger alarm if fuel drops >= 1.5% while parked (~2.25L)
+const float TANK_CAPACITY_LITRES  = 150.0; // Total tank volume (Adjust to your vehicle)
+const float THEFT_DROP_THRESH_PCT = 1.5;   // Trigger alarm if fuel drops >= 1.5% while parked (~2.25L)
 
 // Default Voltage Calibration (Inversely proportional to fuel level)
-// Can be updated and saved permanently to ESP32 Flash memory over Blynk
 const float DEFAULT_V_FULL  = 0.30; // Volts when tank is 100% FULL
 const float DEFAULT_V_EMPTY = 1.75; // Volts when tank is 0% EMPTY
 
@@ -81,9 +76,6 @@ int tamperStatus       = 0;
 bool isTheftAlarm      = false;
 String theftAlertMsg   = "SYSTEM NORMAL";
 
-bool remoteSirenActive = false;
-bool remoteCutoffActive= false;
-
 float latitude         = 0.0;
 float longitude        = 0.0;
 float speedKmh         = 0.0;
@@ -104,19 +96,9 @@ void loadCalibrationFromNVS() {
   lastFuelWhenOff = prefs.getFloat("last_off_fuel", 0.0);
   prefs.end();
 
-  Serial.println("[NVS] Loaded Calibration Profiles:");
-  Serial.print("      V_FULL  : "); Serial.print(calVFull, 3); Serial.println(" V");
-  Serial.print("      V_EMPTY : "); Serial.print(calVEmpty, 3); Serial.println(" V");
-}
-
-void saveCalibrationToNVS(float newFull, float newEmpty) {
-  prefs.begin("divine_fuel", false);
-  prefs.putFloat("v_full", newFull);
-  prefs.putFloat("v_empty", newEmpty);
-  prefs.end();
-  calVFull  = newFull;
-  calVEmpty = newEmpty;
-  Serial.println("[NVS] Calibration updated and saved to Flash Memory!");
+  Serial.println(F("[NVS] Loaded Calibration Profiles:"));
+  Serial.print(F("      V_FULL  : ")); Serial.print(calVFull, 3); Serial.println(F(" V"));
+  Serial.print(F("      V_EMPTY : ")); Serial.print(calVEmpty, 3); Serial.println(F(" V"));
 }
 
 void saveLastFuelWhenOff(float val) {
@@ -127,11 +109,6 @@ void saveLastFuelWhenOff(float val) {
 
 // ======================== PRECISION FUEL SENSING ============================
 
-/*
-  Reads ADC using ESP32 calibrated analogReadMilliVolts() and applies
-  Exponential Moving Average (EMA) filter to completely eliminate
-  fuel sloshing jitter during vehicle cornering, braking, and hill climbs.
-*/
 void readFilteredFuel() {
   uint32_t rawMvTotal = 0;
   const int SAMPLES = 25;
@@ -164,25 +141,16 @@ void readFilteredFuel() {
 
 void readIgnitionAndTamper() {
   ignitionStatus = (digitalRead(PIN_IGNITION_SENSE) == HIGH) ? 1 : 0;
-
-  // Tamper detection: Pin has INPUT_PULLUP.
-  // Switch to ground: If switch opens or wire is cut/tampered, reading becomes HIGH.
-  // If your switch is inverted (LOW = Tampered), change == HIGH to == LOW.
-  tamperStatus = (digitalRead(PIN_TAMPER_LOOP) == LOW) ? 1 : 0;
+  tamperStatus   = (digitalRead(PIN_TAMPER_LOOP) == LOW) ? 1 : 0;
 
   // Detect Key OFF Transition (Driver turns engine off and parks)
   if (lastIgnitionState == 1 && ignitionStatus == 0) {
     lastFuelWhenOff = fuelLevelPercent;
     fuelDifference  = 0.0;
     saveLastFuelWhenOff(lastFuelWhenOff);
-    Serial.print("[SECURITY] Engine switched OFF. Benchmark fuel locked at: ");
+    Serial.print(F("[SECURITY] Engine switched OFF. Benchmark fuel locked: "));
     Serial.print(lastFuelWhenOff, 1);
-    Serial.println("%");
-  }
-
-  // Detect Key ON Transition
-  if (lastIgnitionState == 0 && ignitionStatus == 1) {
-    Serial.println("[IGNITION] Engine Started. Normal driving mode active.");
+    Serial.println(F("%"));
   }
 
   lastIgnitionState = ignitionStatus;
@@ -212,20 +180,6 @@ void evaluateTheftSecurity() {
   } else {
     theftAlertMsg = "SYSTEM NORMAL";
     fuelDifference = 0.0;
-  }
-
-  // 3. ACTUATOR ENGAGEMENT (Physical 110dB Siren Relay)
-  if (isTheftAlarm || remoteSirenActive) {
-    digitalWrite(PIN_SIREN_RELAY, HIGH);
-  } else {
-    digitalWrite(PIN_SIREN_RELAY, LOW);
-  }
-
-  // 4. FUEL CUTOFF VALVE ENGAGEMENT
-  if (remoteCutoffActive) {
-    digitalWrite(PIN_CUTOFF_VALVE, HIGH); // Valve closed / fuel supply cut
-  } else {
-    digitalWrite(PIN_CUTOFF_VALVE, LOW);  // Valve open / normal flow
   }
 }
 
@@ -264,7 +218,7 @@ void sendTelemetryToBlynk() {
     // V1: Live Hardware LED Heartbeat (0 - 255)
     Blynk.virtualWrite(V1, heartbeatCounter);
 
-    // V2: Security Alert Message (Triggers push alerts & loud siren in PWA)
+    // V2: Security Alert Message (Triggers push alerts & loud phone siren in PWA)
     Blynk.virtualWrite(V2, theftAlertMsg);
 
     // V6: Ignition Key Status (0 = OFF, 1 = ON)
@@ -309,24 +263,6 @@ void sendTelemetryToBlynk() {
   Serial.println(F("==================================="));
 }
 
-// ======================== BLYNK REMOTE ACTUATORS ============================
-
-// V10: Remote Siren Override from Divine Fuel App
-BLYNK_WRITE(V10) {
-  remoteSirenActive = (param.asInt() == 1);
-  digitalWrite(PIN_SIREN_RELAY, remoteSirenActive ? HIGH : LOW);
-  Serial.print("[ACTUATOR] Remote 110dB Siren Relay: ");
-  Serial.println(remoteSirenActive ? "ENERGIZED" : "DISENGAGED");
-}
-
-// V11: Remote Fuel Cutoff Valve from Divine Fuel App
-BLYNK_WRITE(V11) {
-  remoteCutoffActive = (param.asInt() == 1);
-  digitalWrite(PIN_CUTOFF_VALVE, remoteCutoffActive ? HIGH : LOW);
-  Serial.print("[ACTUATOR] Remote Fuel Line Cutoff: ");
-  Serial.println(remoteCutoffActive ? "VALVE CLOSED" : "VALVE OPEN");
-}
-
 // ======================== SETUP =============================================
 
 void setup() {
@@ -341,15 +277,10 @@ void setup() {
   // 1. Configure Hardware GPIOs
   pinMode(PIN_IGNITION_SENSE, INPUT);
   pinMode(PIN_TAMPER_LOOP, INPUT_PULLUP);
-  pinMode(PIN_SIREN_RELAY, OUTPUT);
-  pinMode(PIN_CUTOFF_VALVE, OUTPUT);
   pinMode(PIN_STATUS_LED, OUTPUT);
-
-  digitalWrite(PIN_SIREN_RELAY, LOW);
-  digitalWrite(PIN_CUTOFF_VALVE, LOW);
   digitalWrite(PIN_STATUS_LED, LOW);
 
-  // 2. Configure High-Resolution ADC with 11dB Attenuation (0 - 3.3V range)
+  // 2. High-Resolution ADC with 11dB Attenuation (0 - 3.3V range)
   analogReadResolution(12);
   analogSetPinAttenuation(PIN_FUEL_ADC, ADC_11db);
 
@@ -373,10 +304,7 @@ void setup() {
 // ======================== MAIN LOOP =========================================
 
 void loop() {
-  // Process Blynk events and telemetry timer
   Blynk.run();
   timer.run();
-
-  // Continuously ingest GPS NMEA sentence stream without starvation
   readGPS();
 }

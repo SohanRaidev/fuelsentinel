@@ -53,8 +53,6 @@ export const DiagnosticsScreen: React.FC = () => {
 #define PIN_FUEL_ADC        34   // ADC1_CH6 - Tank resistance sensor
 #define PIN_IGNITION_SENSE  27   // 12V Key Switch Ignition Sense
 #define PIN_TAMPER_LOOP     26   // Anti-tamper loop to GND (INPUT_PULLUP)
-#define PIN_SIREN_RELAY     22   // 110dB Siren Horn Relay (Active HIGH)
-#define PIN_CUTOFF_VALVE    23   // Engine Fuel Line Solenoid Valve
 #define PIN_STATUS_LED       2   // Diagnostic Heartbeat LED
 #define GPS_RX_PIN          16   // NEO-6M TX -> ESP32 RX2
 #define GPS_TX_PIN          17   // NEO-6M RX -> ESP32 TX2
@@ -133,7 +131,6 @@ void evaluateTheftSecurity() {
     theftAlertMsg = "SYSTEM NORMAL";
     fuelDifference = 0.0;
   }
-  digitalWrite(PIN_SIREN_RELAY, isTheftAlarm ? HIGH : LOW);
 }
 
 void readGPS() {
@@ -166,8 +163,6 @@ void setup() {
   Serial.begin(115200);
   pinMode(PIN_IGNITION_SENSE, INPUT);
   pinMode(PIN_TAMPER_LOOP, INPUT_PULLUP);
-  pinMode(PIN_SIREN_RELAY, OUTPUT);
-  pinMode(PIN_CUTOFF_VALVE, OUTPUT);
   pinMode(PIN_STATUS_LED, OUTPUT);
   analogReadResolution(12);
   analogSetPinAttenuation(PIN_FUEL_ADC, ADC_11db);
@@ -417,16 +412,6 @@ void loop() {
             <div style={{ padding: '10px 12px', borderRadius: '10px', backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB' }}>
               <div style={{ fontWeight: 700, fontSize: '13px', color: '#111827' }}>GPIO 26 &middot; Tank Security Tamper Loop</div>
               <div style={{ fontSize: '11px', color: '#6B7280', marginTop: '2px' }}>Continuous grounded wire loop around fuel tank strap with interrupt trigger on cut.</div>
-            </div>
-
-            <div style={{ padding: '10px 12px', borderRadius: '10px', backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB' }}>
-              <div style={{ fontWeight: 700, fontSize: '13px', color: '#111827' }}>GPIO 22 &middot; 110dB Alarm Siren Relay</div>
-              <div style={{ fontSize: '11px', color: '#6B7280', marginTop: '2px' }}>12V relay module driving high-decibel vehicle horn under chassis.</div>
-            </div>
-
-            <div style={{ padding: '10px 12px', borderRadius: '10px', backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB' }}>
-              <div style={{ fontWeight: 700, fontSize: '13px', color: '#111827' }}>GPIO 23 &middot; Fuel Line Solenoid Cutoff Valve</div>
-              <div style={{ fontSize: '11px', color: '#6B7280', marginTop: '2px' }}>Inline solenoid valve to shut diesel supply to prevent unauthorized drive-away.</div>
             </div>
 
             <div style={{ padding: '10px 12px', borderRadius: '10px', backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB' }}>

@@ -45,7 +45,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) 
     security,
     gps,
     hardwarePins,
-    trips
+    trips,
+    isHardwareOnline,
+    triggerHardwareSync
   } = useTelemetry();
 
   const totalTripsDistance = trips.reduce((acc, t) => acc + t.distanceKm, 0);
@@ -123,6 +125,48 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) 
               </div>
             </div>
             <ChevronDownIcon size={20} color="#6B7280" />
+          </div>
+
+          {/* HARDWARE CONNECTION STATUS PILL */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '8px 12px',
+              borderRadius: '12px',
+              backgroundColor: isHardwareOnline ? '#F0FDF4' : '#FEF2F2',
+              border: `1px solid ${isHardwareOnline ? '#BBF7D0' : '#FECACA'}`,
+              marginBottom: '10px'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span
+                style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  backgroundColor: isHardwareOnline ? '#16A34A' : '#DC2626'
+                }}
+              />
+              <span style={{ fontSize: '11.5px', fontWeight: 700, color: isHardwareOnline ? '#15803D' : '#DC2626' }}>
+                {isHardwareOnline ? 'ESP32 Device Online • Live Telemetry' : 'ESP32 Device Offline (Powered Off / Disconnected)'}
+              </span>
+            </div>
+            <button
+              onClick={triggerHardwareSync}
+              style={{
+                fontSize: '10.5px',
+                fontWeight: 700,
+                color: isHardwareOnline ? '#15803D' : '#6B7280',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                textDecoration: 'underline'
+              }}
+            >
+              Ping
+            </button>
           </div>
 
           {/* 2. FUEL LEVEL HERO CARD (WITH CIRCULAR RING GAUGE) */}

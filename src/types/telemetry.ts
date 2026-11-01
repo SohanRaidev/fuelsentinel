@@ -50,8 +50,6 @@ export interface SecurityTelemetry {
   theftAlarmReason: string | null;
   theftDropVolumeLitres: number;
   theftDetectionTimestamp: number | null;
-  sirenRelayActive: boolean;
-  fuelCutoffRelayActive: boolean;
   lastIgnitionChangeTimestamp: number;
   tamperLoopContinuityPercent: number;
 }
