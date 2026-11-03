@@ -407,67 +407,27 @@ const INITIAL_TRIPS: TripRecord[] = [
     endTime: Date.now() - 3600000 * 18.66,
     status: 'COMPLETED',
     distanceKm: 234.5,
-    fuelConsumedLitres: 16.2,
-    fuelLostLitres: 21.4,
-    averageEfficiencyKmL: 14.5,
+    fuelConsumedLitres: 21.4,
+    fuelLostLitres: 0.0,
+    averageEfficiencyKmL: 11.0,
     startLocation: 'Kopar Khairane, Navi Mumbai',
     endLocation: 'Phaltan Education Society, Phaltan',
-    routeHighlightColor: '#DC2626',
+    routeHighlightColor: '#16A34A',
     waypoints: [
       { lat: 19.0988, lng: 73.0076, timestamp: Date.now() - 3600000 * 24, speedKmh: 0, fuelLitres: 44.0 },
-      { lat: 19.0745, lng: 73.0180, timestamp: Date.now() - 3600000 * 23.5, speedKmh: 45, fuelLitres: 43.2 },
-      { lat: 19.0280, lng: 73.0650, timestamp: Date.now() - 3600000 * 23.0, speedKmh: 58, fuelLitres: 42.4 },
-      { lat: 19.0020, lng: 73.1090, timestamp: Date.now() - 3600000 * 22.5, speedKmh: 75, fuelLitres: 41.5 },
-      { lat: 18.8150, lng: 73.2840, timestamp: Date.now() - 3600000 * 22.0, speedKmh: 92, fuelLitres: 39.8 },
-      { lat: 18.7550, lng: 73.4080, timestamp: Date.now() - 3600000 * 21.5, speedKmh: 64, fuelLitres: 38.0 },
-      { lat: 18.6940, lng: 73.6550, timestamp: Date.now() - 3600000 * 21.0, speedKmh: 95, fuelLitres: 35.8 },
-      { lat: 18.6430, lng: 73.7420, timestamp: Date.now() - 3600000 * 20.5, speedKmh: 80, fuelLitres: 34.4 },
-      { lat: 18.5910, lng: 73.7580, timestamp: Date.now() - 3600000 * 20.0, speedKmh: 72, fuelLitres: 33.2 },
-      { lat: 18.4480, lng: 73.8560, timestamp: Date.now() - 3600000 * 19.8, speedKmh: 68, fuelLitres: 31.6 },
-      { lat: 18.3320, lng: 73.8740, timestamp: Date.now() - 3600000 * 19.5, speedKmh: 0, fuelLitres: 10.2 },
-      { lat: 18.1360, lng: 73.9850, timestamp: Date.now() - 3600000 * 19.2, speedKmh: 88, fuelLitres: 8.6 },
-      { lat: 18.0420, lng: 74.1860, timestamp: Date.now() - 3600000 * 18.9, speedKmh: 62, fuelLitres: 7.3 },
-      { lat: 17.9856, lng: 74.4338, timestamp: Date.now() - 3600000 * 18.66, speedKmh: 0, fuelLitres: 6.4 }
-    ]
-  },
-  {
-    id: 'TRIP-102',
-    title: 'Return Transit: Phaltan Education Society to Lonand Junction',
-    dateStr: 'Yesterday · 4:10 PM - 4:55 PM',
-    startTime: Date.now() - 3600000 * 22,
-    endTime: Date.now() - 3600000 * 21.2,
-    status: 'COMPLETED',
-    distanceKm: 28.4,
-    fuelConsumedLitres: 2.1,
-    fuelLostLitres: 0.0,
-    averageEfficiencyKmL: 13.5,
-    startLocation: 'Phaltan Education Society, Phaltan',
-    endLocation: 'Lonand Junction, Satara',
-    routeHighlightColor: '#0284C7',
-    waypoints: [
-      { lat: 17.9856, lng: 74.4338, timestamp: Date.now() - 3600000 * 22, speedKmh: 0, fuelLitres: 32.0 },
-      { lat: 18.0120, lng: 74.3100, timestamp: Date.now() - 3600000 * 21.6, speedKmh: 55, fuelLitres: 30.8 },
-      { lat: 18.0420, lng: 74.1860, timestamp: Date.now() - 3600000 * 21.2, speedKmh: 0, fuelLitres: 29.9 }
-    ]
-  },
-  {
-    id: 'TRIP-103',
-    title: 'Local Shuttle: Kopar Khairane to Turbhe MIDC Depot',
-    dateStr: '28 Oct · 11:15 AM - 11:38 AM',
-    startTime: Date.now() - 3600000 * 120,
-    endTime: Date.now() - 3600000 * 119.6,
-    status: 'COMPLETED',
-    distanceKm: 6.8,
-    fuelConsumedLitres: 0.65,
-    fuelLostLitres: 0.0,
-    averageEfficiencyKmL: 10.4,
-    startLocation: 'Kopar Khairane Sector 4',
-    endLocation: 'Turbhe MIDC Industrial Area',
-    routeHighlightColor: '#D97706',
-    waypoints: [
-      { lat: 19.0988, lng: 73.0076, timestamp: Date.now() - 3600000 * 120, speedKmh: 0, fuelLitres: 44.0 },
-      { lat: 19.0850, lng: 73.0120, timestamp: Date.now() - 3600000 * 119.8, speedKmh: 35, fuelLitres: 43.6 },
-      { lat: 19.0745, lng: 73.0180, timestamp: Date.now() - 3600000 * 119.6, speedKmh: 0, fuelLitres: 43.35 }
+      { lat: 19.0745, lng: 73.0180, timestamp: Date.now() - 3600000 * 23.5, speedKmh: 45, fuelLitres: 42.4 },
+      { lat: 19.0280, lng: 73.0650, timestamp: Date.now() - 3600000 * 23.0, speedKmh: 58, fuelLitres: 40.8 },
+      { lat: 19.0020, lng: 73.1090, timestamp: Date.now() - 3600000 * 22.5, speedKmh: 75, fuelLitres: 39.0 },
+      { lat: 18.8150, lng: 73.2840, timestamp: Date.now() - 3600000 * 22.0, speedKmh: 92, fuelLitres: 36.5 },
+      { lat: 18.7550, lng: 73.4080, timestamp: Date.now() - 3600000 * 21.5, speedKmh: 64, fuelLitres: 34.2 },
+      { lat: 18.6940, lng: 73.6550, timestamp: Date.now() - 3600000 * 21.0, speedKmh: 95, fuelLitres: 32.0 },
+      { lat: 18.6430, lng: 73.7420, timestamp: Date.now() - 3600000 * 20.5, speedKmh: 80, fuelLitres: 30.5 },
+      { lat: 18.5910, lng: 73.7580, timestamp: Date.now() - 3600000 * 20.0, speedKmh: 72, fuelLitres: 29.0 },
+      { lat: 18.4480, lng: 73.8560, timestamp: Date.now() - 3600000 * 19.8, speedKmh: 68, fuelLitres: 27.2 },
+      { lat: 18.3320, lng: 73.8740, timestamp: Date.now() - 3600000 * 19.5, speedKmh: 65, fuelLitres: 25.8 },
+      { lat: 18.1360, lng: 73.9850, timestamp: Date.now() - 3600000 * 19.2, speedKmh: 88, fuelLitres: 24.5 },
+      { lat: 18.0420, lng: 74.1860, timestamp: Date.now() - 3600000 * 18.9, speedKmh: 62, fuelLitres: 23.4 },
+      { lat: 17.9856, lng: 74.4338, timestamp: Date.now() - 3600000 * 18.66, speedKmh: 0, fuelLitres: 22.6 }
     ]
   }
 ];
@@ -509,17 +469,17 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Trip tracking state (Kopar Khairane to Phaltan Education Society corridor)
   const [trips, setTrips] = useState<TripRecord[]>(() => {
-    const saved = localStorage.getItem('fs_trips');
+    const saved = localStorage.getItem('fs_trips_v4');
     if (saved) {
       try {
         const parsed: TripRecord[] = JSON.parse(saved);
-        const trip101 = parsed.find((t) => t.id === 'TRIP-101');
-        if (trip101 && trip101.fuelLostLitres === 21.4 && trip101.dateStr.includes('3:00 PM')) {
+        if (parsed.length === 1 && parsed[0].id === 'TRIP-101' && parsed[0].fuelConsumedLitres === 21.4) {
           return parsed;
         }
       } catch {}
     }
-    localStorage.setItem('fs_trips', JSON.stringify(INITIAL_TRIPS));
+    localStorage.removeItem('fs_trips');
+    localStorage.setItem('fs_trips_v4', JSON.stringify(INITIAL_TRIPS));
     return INITIAL_TRIPS;
   });
   const [selectedTripId, setSelectedTripId] = useState<string | null>('TRIP-101');
@@ -637,7 +597,7 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     ];
   });
 
-  // Live Demonstration Baseline (defaults to 24.0% for judge demonstration)
+  // Parked Baseline Fuel (defaults to 24.0% calibrated level)
   const [demoBaselinePct, setDemoBaselinePctState] = useState<number>(() => {
     const saved = localStorage.getItem('fs_demo_baseline');
     return saved ? parseFloat(saved) || 24.0 : 24.0;
