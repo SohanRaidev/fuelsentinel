@@ -49,7 +49,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) 
     isHardwareOnline,
     triggerHardwareSync,
     resetTamper,
-    dismissAlert
+    dismissAlert,
+    demoBaselinePct,
+    setDemoBaselinePct
   } = useTelemetry();
 
   const totalTripsDistance = trips.reduce((acc, t) => acc + t.distanceKm, 0);
@@ -81,21 +83,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) 
   const ringTrackPath = describeArc(41, 41, 31, 135, 405);
   const ringActivePath = describeArc(41, 41, 31, 135, 135 + Math.max(2, (clampedPct / 100) * 270));
 
-  // Real Hourly Fuel Consumption / Refill Delta
-  // Look for a genuine history point logged between 30 and 90 minutes ago
-  const now = Date.now();
-  const oneHourAgo = now - 3600000;
-  const historyPoint1Hr = fuelHistory.find((p) => p.timestamp <= oneHourAgo && now - p.timestamp <= 5400000);
-
-  // If vehicle was recently connected (< 30 minutes of live history), baseline is establishing
-  const hasSubstantialHistory = fuelHistory.length >= 2 && (now - fuelHistory[0].timestamp >= 1800000);
-  const referencePoint = historyPoint1Hr || (hasSubstantialHistory ? fuelHistory[0] : null);
-
-  const hourlyDelta = referencePoint
-    ? Math.round((clampedPct - referencePoint.percentage) * 10) / 10
-    : 0;
-
-  const isSessionNew = !referencePoint;
+  // Live Demonstration Baseline (defaults to 24.0% as specified for judge demonstration)
+  const baselinePct = demoBaselinePct || 24.0;
+  const deltaFromBaseline = Math.round((clampedPct - baselinePct) * 10) / 10;
+  const litresDropped = Math.max(0, Math.round(((baselinePct - clampedPct) / 100) * vehicle.tankCapacityLitres * 10) / 10);
 
   // Dynamic Real Device Connectivity Elapsed Time
   const getLastSyncText = () => {
@@ -375,32 +366,96 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) 
               <div
                 className="trend-badge-top"
                 style={{
-                  color: isSessionNew ? '#15803D' : hourlyDelta < 0 ? '#DC2626' : '#15803D'
+                  color: deltaFromBaseline < 0 ? '#DC2626' : deltaFromBaseline > 0 ? '#15803D' : '#15803D'
                 }}
               >
-                {!isSessionNew && hourlyDelta < 0 ? (
+                {deltaFromBaseline < 0 ? (
                   <ArrowDownTrendIcon size={12} color="#DC2626" />
                 ) : (
                   <span style={{ fontSize: '12px', fontWeight: 800 }}>&bull;</span>
                 )}
                 <span>
-                  {isSessionNew
+                  {deltaFromBaseline === 0
                     ? '0.0%'
-                    : hourlyDelta === 0
-                    ? '0.0%'
-                    : hourlyDelta > 0
-                    ? `+${hourlyDelta}%`
-                    : `${hourlyDelta}%`}
+                    : deltaFromBaseline > 0
+                    ? `+${deltaFromBaseline.toFixed(1)}%`
+                    : `${deltaFromBaseline.toFixed(1)}%`}
                 </span>
               </div>
               <div className="trend-badge-sub">
-                {isSessionNew
-                  ? 'Live Baseline'
-                  : hourlyDelta === 0
-                  ? 'Stable in 1 hr'
-                  : hourlyDelta < 0
-                  ? 'in last 1 hr'
+                {deltaFromBaseline === 0
+                  ? `${baselinePct.toFixed(1)}% Baseline`
+                  : deltaFromBaseline < 0
+                  ? `-${litresDropped.toFixed(1)}L from 24%`
                   : 'Refueled'}
+              </div>
+            </div>
+          </div>
+
+          {/* 2b. LIVE JUDGES DEMONSTRATION & BASELINE MONITOR CARD */}
+          <div
+            className="ios-card"
+            style={{
+              padding: '12px 14px',
+              marginBottom: '10px',
+              backgroundColor: deltaFromBaseline < 0 ? '#FEF2F2' : '#F0FDF4',
+              border: `1.5px solid ${deltaFromBaseline < 0 ? '#FCA5A5' : '#BBF7D0'}`,
+              boxShadow: deltaFromBaseline < 0 ? '0 4px 14px rgba(220, 38, 38, 0.15)' : 'none',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span
+                  style={{
+                    width: '9px',
+                    height: '9px',
+                    borderRadius: '50%',
+                    backgroundColor: deltaFromBaseline < 0 ? '#DC2626' : '#16A34A',
+                    boxShadow: deltaFromBaseline < 0 ? '0 0 0 4px rgba(220,38,38,0.2)' : '0 0 0 3px rgba(22,163,74,0.15)'
+                  }}
+                />
+                <span style={{ fontSize: '12px', fontWeight: 800, color: deltaFromBaseline < 0 ? '#991B1B' : '#15803D', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                  {deltaFromBaseline < 0 ? '⚠️ Live Fuel Removal Detected' : `Live Baseline: ${baselinePct.toFixed(1)}% (Ready for Test)`}
+                </span>
+              </div>
+
+              <button
+                onClick={() => setDemoBaselinePct(clampedPct > 0 ? clampedPct : 24.0)}
+                style={{
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  padding: '3px 8px',
+                  borderRadius: '6px',
+                  border: '1px solid #D1D5DB',
+                  backgroundColor: '#FFFFFF',
+                  color: '#374151',
+                  cursor: 'pointer'
+                }}
+                title="Reset baseline to current reading"
+              >
+                Reset Baseline (24%)
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', textAlign: 'center', backgroundColor: '#FFFFFF', padding: '8px', borderRadius: '10px', border: '1px solid #E5E7EB' }}>
+              <div>
+                <div style={{ fontSize: '10px', color: '#6B7280', fontWeight: 600 }}>BASELINE</div>
+                <div style={{ fontSize: '13px', fontWeight: 800, color: '#111827' }}>
+                  {baselinePct.toFixed(1)}% <span style={{ fontSize: '10px', color: '#6B7280' }}>({((baselinePct / 100) * vehicle.tankCapacityLitres).toFixed(1)}L)</span>
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: '10px', color: '#6B7280', fontWeight: 600 }}>CURRENT</div>
+                <div style={{ fontSize: '13px', fontWeight: 800, color: deltaFromBaseline < 0 ? '#DC2626' : '#15803D' }}>
+                  {clampedPct.toFixed(1)}% <span style={{ fontSize: '10px' }}>({fuel.litres.toFixed(1)}L)</span>
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: '10px', color: deltaFromBaseline < 0 ? '#DC2626' : '#6B7280', fontWeight: 700 }}>REMOVED</div>
+                <div style={{ fontSize: '13px', fontWeight: 900, color: deltaFromBaseline < 0 ? '#DC2626' : '#15803D' }}>
+                  {deltaFromBaseline < 0 ? `-${litresDropped.toFixed(1)} L` : '0.0 L'}
+                </div>
               </div>
             </div>
           </div>

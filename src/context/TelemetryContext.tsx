@@ -87,6 +87,8 @@ export interface TelemetryContextType {
   clearHistory: () => void;
   resetFleetToDefaults: () => void;
   reloadTestingAlerts: () => void;
+  demoBaselinePct: number;
+  setDemoBaselinePct: (pct: number) => void;
 }
 
 const DEFAULT_FLEET: VehicleConfig[] = [
@@ -625,8 +627,38 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         { timestamp: now, timeStr: 'NOW', litres: Math.round(cap * 0.72), percentage: 72 }
       ];
     }
-    return [];
+    const cap = activeVehicle.tankCapacityLitres;
+    const now = Date.now();
+    const basePct = 24.0;
+    const baseLitres = Math.round((basePct / 100) * cap * 10) / 10;
+    return [
+      { timestamp: now - 3600000, timeStr: '1 hr ago', litres: baseLitres, percentage: basePct },
+      { timestamp: now, timeStr: 'Baseline', litres: baseLitres, percentage: basePct }
+    ];
   });
+
+  // Live Demonstration Baseline (defaults to 24.0% for judge demonstration)
+  const [demoBaselinePct, setDemoBaselinePctState] = useState<number>(() => {
+    const saved = localStorage.getItem('fs_demo_baseline');
+    return saved ? parseFloat(saved) || 24.0 : 24.0;
+  });
+
+  const setDemoBaselinePct = (pct: number) => {
+    const valid = Math.max(0, Math.min(100, Math.round(pct * 10) / 10));
+    setDemoBaselinePctState(valid);
+    localStorage.setItem('fs_demo_baseline', valid.toString());
+
+    // Update fuelHistory baseline points so trend charts start from this baseline
+    const cap = activeVehicle.tankCapacityLitres;
+    const now = Date.now();
+    const baseLitres = Math.round((valid / 100) * cap * 10) / 10;
+    const newBase: FuelHistoryPoint[] = [
+      { timestamp: now - 3600000, timeStr: '1 hr ago', litres: baseLitres, percentage: valid },
+      { timestamp: now, timeStr: 'Baseline', litres: baseLitres, percentage: valid }
+    ];
+    setFuelHistory(newBase);
+    localStorage.setItem(`fs_fuel_history_${activeVehicle.id}`, JSON.stringify(newBase));
+  };
 
   const [security, setSecurity] = useState<SecurityTelemetry>(() => ({
     ignition: 'OFF',
@@ -1124,7 +1156,13 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         const rawTheftMsg = parsedPins.v2.trim();
         const hasTheftMsg = isHwConnected && rawTheftMsg !== '' && rawTheftMsg !== 'OK' && rawTheftMsg !== '0';
 
-        const hardwareAlarmActive = isHwConnected && (isTampered || hasTheftMsg);
+        // Check if fuel is dropping below 24.0% baseline while parked (Ignition OFF)
+        const basePct = demoBaselinePct || 24.0;
+        const dropFromBaseline = Math.max(0, basePct - currentPct);
+        // Siphon triggered if fuel dropped by at least 1.5% (-0.7L) from baseline or hardware flagged v8/v2
+        const hasSiphonDrain = isHwConnected && !isIgnitionOn && (dropFromBaseline >= 1.5 || parsedPins.v8 >= 1.0);
+
+        const hardwareAlarmActive = isHwConnected && (isTampered || hasTheftMsg || hasSiphonDrain);
         if (!hardwareAlarmActive) {
           isAlarmSilencedRef.current = false;
         }
@@ -1136,11 +1174,14 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             if (!isAudioMuted) {
               audioAlert.startAlarmSiren();
             }
-            triggerTheftNotification(activeVehicle.plate, (parsedPins.v8 / 100) * activeVehicle.tankCapacityLitres);
+            const litresLostAmount = Math.max(
+              0.5,
+              Math.round(((dropFromBaseline > 0 ? dropFromBaseline : parsedPins.v8) / 100) * activeVehicle.tankCapacityLitres * 10) / 10
+            );
+            triggerTheftNotification(activeVehicle.plate, litresLostAmount);
 
             // Record live accurate alert in incident history
             const nowTime = Date.now();
-            const litresLostAmount = Math.round(((parsedPins.v8 / 100) * activeVehicle.tankCapacityLitres) * 10) / 10;
             const newLiveAlert: SecurityAlert = {
               id: `ALT-LIVE-${nowTime}`,
               vehicleId: activeVehicle.id,
@@ -1152,8 +1193,8 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 ? parsedPins.v2
                 : isTampered
                 ? `Physical anti-tamper security circuit severed on ${activeVehicle.name} (${activeVehicle.plate}).`
-                : `Rapid fuel loss (-${litresLostAmount.toFixed(1)}L) detected with ignition OFF on ${activeVehicle.name}.`,
-              litresLost: litresLostAmount > 0 ? litresLostAmount : 4.5,
+                : `Rapid fuel loss (-${litresLostAmount.toFixed(1)}L) detected with ignition OFF on ${activeVehicle.name} (dropped from ${basePct.toFixed(1)}% baseline).`,
+              litresLost: litresLostAmount,
               locationSnapshot: {
                 lat: parsedPins.v3 || 19.0433,
                 lng: parsedPins.v4 || 73.0232
@@ -1556,7 +1597,9 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         exportHistoryCsv,
         clearHistory,
         resetFleetToDefaults,
-        reloadTestingAlerts
+        reloadTestingAlerts,
+        demoBaselinePct,
+        setDemoBaselinePct
       }}
     >
       {children}
