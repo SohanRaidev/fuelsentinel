@@ -26,6 +26,7 @@ export const VehicleSetupScreen: React.FC = () => {
   const [newPlate, setNewPlate] = useState('');
   const [newCapacity, setNewCapacity] = useState('80');
   const [newFuelType, setNewFuelType] = useState<'DIESEL' | 'PETROL' | 'ETHANOL'>('DIESEL');
+  const [newAuthToken, setNewAuthToken] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,10 +48,12 @@ export const VehicleSetupScreen: React.FC = () => {
       calibrationPoints: vehicle.calibrationPoints,
       theftDropRateThresholdLpm: 1.2,
       emergencyContactPhone: '+91 98200 12345',
-      geofenceRadiusMeters: 100
+      geofenceRadiusMeters: 100,
+      blynkAuthToken: newAuthToken.trim() || undefined
     });
     setNewName('');
     setNewPlate('');
+    setNewAuthToken('');
     setAddModalOpen(false);
   };
 
@@ -272,6 +275,37 @@ export const VehicleSetupScreen: React.FC = () => {
             </div>
           </div>
 
+          {/* ESP32 HARDWARE BLYNK AUTH TOKEN (FOR DUAL ESP SETUP) */}
+          <div style={{ backgroundColor: '#F8FAFC', padding: '12px', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 700, color: '#1E293B' }}>
+                ESP32 Device Blynk Auth Token
+              </label>
+              <span style={{ fontSize: '10.5px', color: '#15803D', fontWeight: 700, backgroundColor: '#DCFCE7', padding: '2px 6px', borderRadius: '4px' }}>
+                Dual-ESP Unit Support
+              </span>
+            </div>
+            <input
+              type="text"
+              value={formData.blynkAuthToken || ''}
+              placeholder="e.g. 6SR0JUj39EfvIM0Ke-VtPwGR-tUvh43e"
+              onChange={(e) => setFormData({ ...formData, blynkAuthToken: e.target.value.trim() })}
+              style={{
+                width: '100%',
+                padding: '9px 12px',
+                borderRadius: '8px',
+                border: '1px solid #CBD5E1',
+                fontSize: '12px',
+                fontFamily: 'monospace',
+                backgroundColor: '#FFFFFF',
+                color: '#0F172A'
+              }}
+            />
+            <div style={{ fontSize: '11px', color: '#64748B', marginTop: '4px', lineHeight: 1.4 }}>
+              Assign each ESP32 its own Blynk Auth Token (e.g. Token #1 for Main Vehicle Unit, Token #2 for Test Bench Unit). Switching vehicles in the app connects to that specific ESP32.
+            </div>
+          </div>
+
           <button
             type="submit"
             style={{
@@ -368,6 +402,19 @@ export const VehicleSetupScreen: React.FC = () => {
                       <option value="ETHANOL">Ethanol</option>
                     </select>
                   </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '12px', color: '#374151', display: 'block', marginBottom: '3px' }}>
+                    ESP32 Blynk Device Auth Token (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={newAuthToken}
+                    onChange={(e) => setNewAuthToken(e.target.value)}
+                    placeholder="e.g. 6SR0JUj39EfvIM0Ke-VtPwGR-tUvh43e"
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '12px', fontFamily: 'monospace' }}
+                  />
                 </div>
               </div>
 

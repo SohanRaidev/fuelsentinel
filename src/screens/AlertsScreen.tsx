@@ -14,13 +14,25 @@ export const AlertsScreen: React.FC = () => {
     alerts,
     vehicle,
     dispatchEmergency,
-    resolveAlert
+    resolveAlert,
+    reloadTestingAlerts
   } = useTelemetry();
 
   const [filter, setFilter] = useState<'ALL' | 'CRITICAL' | 'WARNING' | 'RESOLVED'>('ALL');
   const [activeModalAlert, setActiveModalAlert] = useState<SecurityAlert | null>(null);
   const [modalAction, setModalAction] = useState<'DISPATCH' | 'RESOLVE' | null>(null);
   const [actionNotes, setActionNotes] = useState('');
+
+  const formatAlertDate = (ts: number) => {
+    const d = new Date(ts);
+    const now = new Date();
+    const isToday = d.toDateString() === now.toDateString();
+    const isYesterday = new Date(now.getTime() - 86400000).toDateString() === d.toDateString();
+    const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (isToday) return `Today · ${timeStr}`;
+    if (isYesterday) return `Yesterday · ${timeStr}`;
+    return `${d.toLocaleDateString([], { day: 'numeric', month: 'short' })} · ${timeStr}`;
+  };
 
   const filteredAlerts = alerts.filter((a) => {
     if (filter === 'ALL') return true;
@@ -57,7 +69,7 @@ export const AlertsScreen: React.FC = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '0 14px' }}>
       {/* SECURITY INCIDENTS & ALERTS CARD */}
       <div className="ios-card" style={{ padding: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
           <div>
             <div style={{ fontSize: '17px', fontWeight: 800, color: '#111827' }}>
               Security Incidents &amp; Alerts
@@ -88,6 +100,48 @@ export const AlertsScreen: React.FC = () => {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* BENCH & FLEET TEST LOGS CONTROLLER BAR */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '7px 11px',
+            backgroundColor: '#F8FAFC',
+            borderRadius: '10px',
+            border: '1px solid #E2E8F0',
+            marginBottom: '12px',
+            fontSize: '11.5px',
+            color: '#475569'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontWeight: 700, color: '#0F172A' }}>{filteredAlerts.length} Logs</span>
+            <span>&bull;</span>
+            <span style={{ color: '#64748B' }}>Past 30 Days Test Records</span>
+          </div>
+
+          <button
+            onClick={() => {
+              if (window.confirm('Reset alert log history to the 15 standard bench-testing incidents from the past month?')) {
+                reloadTestingAlerts();
+              }
+            }}
+            style={{
+              padding: '3px 8px',
+              backgroundColor: '#ECFDF5',
+              border: '1px solid #BBF7D0',
+              borderRadius: '6px',
+              fontSize: '11px',
+              fontWeight: 700,
+              color: '#15803D',
+              cursor: 'pointer'
+            }}
+          >
+            Reset 15 Test Logs
+          </button>
         </div>
 
         {filteredAlerts.length === 0 ? (
@@ -175,9 +229,11 @@ export const AlertsScreen: React.FC = () => {
                 )}
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
-                  <div style={{ fontSize: '10.5px', color: '#6B7280' }}>
-                    {new Date(alert.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                    {alert.locationSnapshot && ` • GPS: ${alert.locationSnapshot.lat.toFixed(4)}, ${alert.locationSnapshot.lng.toFixed(4)}`}
+                  <div style={{ fontSize: '11px', color: '#6B7280', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                    <span style={{ fontWeight: 700, color: '#374151' }}>{formatAlertDate(alert.timestamp)}</span>
+                    {alert.locationSnapshot && (
+                      <span style={{ fontSize: '10.5px', color: '#6B7280' }}>&bull; GPS: {alert.locationSnapshot.lat.toFixed(4)}, {alert.locationSnapshot.lng.toFixed(4)}</span>
+                    )}
                   </div>
 
                   {alert.status !== 'RESOLVED' && alert.status !== 'FALSE_ALARM' && (

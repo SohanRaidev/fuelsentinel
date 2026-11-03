@@ -32,10 +32,10 @@ interface DashboardScreenProps {
 
 export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) => {
   const {
-    vehicles: _vehicles,
+    vehicles,
     activeVehicleId: _activeVehicleId,
     vehicle,
-    switchVehicle: _switchVehicle,
+    switchVehicle,
     updateActiveVehicle: _updateActiveVehicle,
     fuel,
     fuelHistory,
@@ -127,8 +127,64 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) 
                 cursor: 'pointer'
               }}
             >
-              Switch Vehicle
+              Manage Units
             </button>
+          </div>
+
+          {/* DUAL ESP32 QUICK UNIT SELECTOR */}
+          <div
+            style={{
+              display: 'flex',
+              gap: '6px',
+              backgroundColor: '#F1F5F9',
+              padding: '4px',
+              borderRadius: '12px',
+              marginTop: '-4px',
+              marginBottom: '6px'
+            }}
+          >
+            {vehicles.slice(0, 3).map((v) => {
+              const isSelected = v.id === vehicle.id;
+              const isTest = v.id === 'VEH-FS-TEST' || v.plate.includes('TEST');
+              return (
+                <button
+                  key={v.id}
+                  onClick={() => switchVehicle(v.id)}
+                  style={{
+                    flex: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    padding: '8px 6px',
+                    borderRadius: '9px',
+                    border: isSelected ? '1px solid #16A34A' : '1px solid transparent',
+                    backgroundColor: isSelected ? '#FFFFFF' : 'transparent',
+                    boxShadow: isSelected ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                    color: isSelected ? '#15803D' : '#64748B',
+                    fontWeight: isSelected ? 800 : 600,
+                    fontSize: '11.5px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <span>{isTest ? '🔬' : '🚛'}</span>
+                  <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {isTest ? 'Bench Test Unit' : v.name.split('(')[0].trim()}
+                  </span>
+                  {isSelected && (
+                    <span
+                      style={{
+                        width: '7px',
+                        height: '7px',
+                        borderRadius: '50%',
+                        backgroundColor: isHardwareOnline ? '#16A34A' : '#94A3B8'
+                      }}
+                    />
+                  )}
+                </button>
+              );
+            })}
           </div>
 
           {/* HARDWARE CONNECTION STATUS PILL */}
