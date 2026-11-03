@@ -400,32 +400,32 @@ const INITIAL_TRIPS: TripRecord[] = [
   {
     id: 'TRIP-101',
     title: 'Highway Transit: Kopar Khairane to Phaltan Education Society',
-    dateStr: 'Today · 6:30 AM - 10:45 AM',
-    startTime: Date.now() - 3600000 * 4.5,
-    endTime: Date.now() - 3600000 * 0.2,
+    dateStr: 'Yesterday · 3:00 PM - 8:20 PM',
+    startTime: Date.now() - 3600000 * 24,
+    endTime: Date.now() - 3600000 * 18.66,
     status: 'COMPLETED',
     distanceKm: 234.5,
     fuelConsumedLitres: 16.2,
-    fuelLostLitres: 0.0,
+    fuelLostLitres: 21.4,
     averageEfficiencyKmL: 14.5,
     startLocation: 'Kopar Khairane, Navi Mumbai',
     endLocation: 'Phaltan Education Society, Phaltan',
-    routeHighlightColor: '#16A34A',
+    routeHighlightColor: '#DC2626',
     waypoints: [
-      { lat: 19.0988, lng: 73.0076, timestamp: Date.now() - 3600000 * 4.5, speedKmh: 0, fuelLitres: 43.5 },
-      { lat: 19.0745, lng: 73.0180, timestamp: Date.now() - 3600000 * 4.2, speedKmh: 45, fuelLitres: 42.8 },
-      { lat: 19.0280, lng: 73.0650, timestamp: Date.now() - 3600000 * 3.9, speedKmh: 58, fuelLitres: 42.1 },
-      { lat: 19.0020, lng: 73.1090, timestamp: Date.now() - 3600000 * 3.7, speedKmh: 75, fuelLitres: 41.2 },
-      { lat: 18.8150, lng: 73.2840, timestamp: Date.now() - 3600000 * 3.2, speedKmh: 92, fuelLitres: 39.5 },
-      { lat: 18.7550, lng: 73.4080, timestamp: Date.now() - 3600000 * 2.8, speedKmh: 64, fuelLitres: 37.8 },
-      { lat: 18.6940, lng: 73.6550, timestamp: Date.now() - 3600000 * 2.3, speedKmh: 95, fuelLitres: 35.6 },
-      { lat: 18.6430, lng: 73.7420, timestamp: Date.now() - 3600000 * 2.0, speedKmh: 80, fuelLitres: 34.2 },
-      { lat: 18.5910, lng: 73.7580, timestamp: Date.now() - 3600000 * 1.7, speedKmh: 72, fuelLitres: 33.1 },
-      { lat: 18.4480, lng: 73.8560, timestamp: Date.now() - 3600000 * 1.3, speedKmh: 68, fuelLitres: 31.5 },
-      { lat: 18.3320, lng: 73.8740, timestamp: Date.now() - 3600000 * 1.0, speedKmh: 82, fuelLitres: 30.1 },
-      { lat: 18.1360, lng: 73.9850, timestamp: Date.now() - 3600000 * 0.6, speedKmh: 88, fuelLitres: 28.5 },
-      { lat: 18.0420, lng: 74.1860, timestamp: Date.now() - 3600000 * 0.3, speedKmh: 62, fuelLitres: 27.2 },
-      { lat: 17.9856, lng: 74.4338, timestamp: Date.now() - 3600000 * 0.1, speedKmh: 0, fuelLitres: 26.1 }
+      { lat: 19.0988, lng: 73.0076, timestamp: Date.now() - 3600000 * 24, speedKmh: 0, fuelLitres: 44.0 },
+      { lat: 19.0745, lng: 73.0180, timestamp: Date.now() - 3600000 * 23.5, speedKmh: 45, fuelLitres: 43.2 },
+      { lat: 19.0280, lng: 73.0650, timestamp: Date.now() - 3600000 * 23.0, speedKmh: 58, fuelLitres: 42.4 },
+      { lat: 19.0020, lng: 73.1090, timestamp: Date.now() - 3600000 * 22.5, speedKmh: 75, fuelLitres: 41.5 },
+      { lat: 18.8150, lng: 73.2840, timestamp: Date.now() - 3600000 * 22.0, speedKmh: 92, fuelLitres: 39.8 },
+      { lat: 18.7550, lng: 73.4080, timestamp: Date.now() - 3600000 * 21.5, speedKmh: 64, fuelLitres: 38.0 },
+      { lat: 18.6940, lng: 73.6550, timestamp: Date.now() - 3600000 * 21.0, speedKmh: 95, fuelLitres: 35.8 },
+      { lat: 18.6430, lng: 73.7420, timestamp: Date.now() - 3600000 * 20.5, speedKmh: 80, fuelLitres: 34.4 },
+      { lat: 18.5910, lng: 73.7580, timestamp: Date.now() - 3600000 * 20.0, speedKmh: 72, fuelLitres: 33.2 },
+      { lat: 18.4480, lng: 73.8560, timestamp: Date.now() - 3600000 * 19.8, speedKmh: 68, fuelLitres: 31.6 },
+      { lat: 18.3320, lng: 73.8740, timestamp: Date.now() - 3600000 * 19.5, speedKmh: 0, fuelLitres: 10.2 },
+      { lat: 18.1360, lng: 73.9850, timestamp: Date.now() - 3600000 * 19.2, speedKmh: 88, fuelLitres: 8.6 },
+      { lat: 18.0420, lng: 74.1860, timestamp: Date.now() - 3600000 * 18.9, speedKmh: 62, fuelLitres: 7.3 },
+      { lat: 17.9856, lng: 74.4338, timestamp: Date.now() - 3600000 * 18.66, speedKmh: 0, fuelLitres: 6.4 }
     ]
   },
   {
@@ -511,7 +511,8 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (saved) {
       try {
         const parsed: TripRecord[] = JSON.parse(saved);
-        if (parsed.some((t) => t.startLocation.includes('Kopar') || t.endLocation.includes('Phaltan'))) {
+        const trip101 = parsed.find((t) => t.id === 'TRIP-101');
+        if (trip101 && trip101.fuelLostLitres === 21.4 && trip101.dateStr.includes('3:00 PM')) {
           return parsed;
         }
       } catch {}
@@ -596,18 +597,35 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }));
 
   // Accurate Rolling Fuel History Points
+  // For live real vehicle (Ertiga), start with genuine empty baseline so live readings don't get compared to mock 72%
   const [fuelHistory, setFuelHistory] = useState<FuelHistoryPoint[]>(() => {
-    const cap = activeVehicle.tankCapacityLitres;
-    const now = Date.now();
-    return [
-      { timestamp: now - 3600000 * 3, timeStr: '13:00', litres: Math.round(cap * 0.76), percentage: 76 },
-      { timestamp: now - 3600000 * 2.5, timeStr: '13:30', litres: Math.round(cap * 0.75), percentage: 75 },
-      { timestamp: now - 3600000 * 2, timeStr: '14:00', litres: Math.round(cap * 0.74), percentage: 74 },
-      { timestamp: now - 3600000 * 1.5, timeStr: '14:30', litres: Math.round(cap * 0.73), percentage: 73 },
-      { timestamp: now - 3600000 * 1, timeStr: '15:00', litres: Math.round(cap * 0.72), percentage: 72 },
-      { timestamp: now - 3600000 * 0.5, timeStr: '15:30', litres: Math.round(cap * 0.72), percentage: 72 },
-      { timestamp: now, timeStr: 'NOW', litres: Math.round(cap * 0.72), percentage: 72 }
-    ];
+    const saved = localStorage.getItem(`fs_fuel_history_${activeVehicleId}`);
+    if (saved) {
+      try {
+        const parsed: FuelHistoryPoint[] = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // If cached points were old hardcoded 76/72% mocks, invalidate them for real Ertiga
+          const isMock = parsed.some((p) => p.percentage === 76 && p.timeStr === '13:00');
+          if (!isMock || activeVehicleId === 'VEH-FS-TEST') {
+            return parsed;
+          }
+        }
+      } catch {}
+    }
+    if (activeVehicleId === 'VEH-FS-TEST') {
+      const cap = activeVehicle.tankCapacityLitres;
+      const now = Date.now();
+      return [
+        { timestamp: now - 3600000 * 3, timeStr: '13:00', litres: Math.round(cap * 0.76), percentage: 76 },
+        { timestamp: now - 3600000 * 2.5, timeStr: '13:30', litres: Math.round(cap * 0.75), percentage: 75 },
+        { timestamp: now - 3600000 * 2, timeStr: '14:00', litres: Math.round(cap * 0.74), percentage: 74 },
+        { timestamp: now - 3600000 * 1.5, timeStr: '14:30', litres: Math.round(cap * 0.73), percentage: 73 },
+        { timestamp: now - 3600000 * 1, timeStr: '15:00', litres: Math.round(cap * 0.72), percentage: 72 },
+        { timestamp: now - 3600000 * 0.5, timeStr: '15:30', litres: Math.round(cap * 0.72), percentage: 72 },
+        { timestamp: now, timeStr: 'NOW', litres: Math.round(cap * 0.72), percentage: 72 }
+      ];
+    }
+    return [];
   });
 
   const [security, setSecurity] = useState<SecurityTelemetry>(() => ({
@@ -1065,12 +1083,18 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setFuelHistory((prev) => {
           const now = Date.now();
           const timeStr = new Date(now).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          if (prev.length === 0) {
+            const initial = [{ timestamp: now, timeStr, litres: calcLitres, percentage: currentPct }];
+            localStorage.setItem(`fs_fuel_history_${activeVehicle.id}`, JSON.stringify(initial));
+            return initial;
+          }
           const lastPt = prev[prev.length - 1];
           if (lastPt && Math.abs(lastPt.litres - calcLitres) < 0.2 && now - lastPt.timestamp < 60000) {
             return prev;
           }
-          const next = [...prev, { timestamp: now, timeStr, litres: calcLitres, percentage: currentPct }];
-          return next.slice(-15);
+          const next = [...prev, { timestamp: now, timeStr, litres: calcLitres, percentage: currentPct }].slice(-24);
+          localStorage.setItem(`fs_fuel_history_${activeVehicle.id}`, JSON.stringify(next));
+          return next;
         });
 
         // CRITICAL PROTECTION: If hardware is NOT connected (Device Offline),

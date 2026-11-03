@@ -82,9 +82,20 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) 
   const ringActivePath = describeArc(41, 41, 31, 135, 135 + Math.max(2, (clampedPct / 100) * 270));
 
   // Real Hourly Fuel Consumption / Refill Delta
-  const oneHourAgo = Date.now() - 3600000;
-  const historyPoint1Hr = fuelHistory.find((p) => p.timestamp <= oneHourAgo) || fuelHistory[0];
-  const hourlyDelta = historyPoint1Hr ? Math.round((clampedPct - historyPoint1Hr.percentage) * 10) / 10 : 0;
+  // Look for a genuine history point logged between 30 and 90 minutes ago
+  const now = Date.now();
+  const oneHourAgo = now - 3600000;
+  const historyPoint1Hr = fuelHistory.find((p) => p.timestamp <= oneHourAgo && now - p.timestamp <= 5400000);
+
+  // If vehicle was recently connected (< 30 minutes of live history), baseline is establishing
+  const hasSubstantialHistory = fuelHistory.length >= 2 && (now - fuelHistory[0].timestamp >= 1800000);
+  const referencePoint = historyPoint1Hr || (hasSubstantialHistory ? fuelHistory[0] : null);
+
+  const hourlyDelta = referencePoint
+    ? Math.round((clampedPct - referencePoint.percentage) * 10) / 10
+    : 0;
+
+  const isSessionNew = !referencePoint;
 
   // Dynamic Real Device Connectivity Elapsed Time
   const getLastSyncText = () => {
@@ -361,16 +372,35 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) 
 
             {/* Right: Trend Pill Badge */}
             <div className="trend-badge-pill">
-              <div className="trend-badge-top" style={{ color: hourlyDelta < 0 ? '#DC2626' : '#15803D' }}>
-                {hourlyDelta < 0 ? (
+              <div
+                className="trend-badge-top"
+                style={{
+                  color: isSessionNew ? '#15803D' : hourlyDelta < 0 ? '#DC2626' : '#15803D'
+                }}
+              >
+                {!isSessionNew && hourlyDelta < 0 ? (
                   <ArrowDownTrendIcon size={12} color="#DC2626" />
                 ) : (
                   <span style={{ fontSize: '12px', fontWeight: 800 }}>&bull;</span>
                 )}
-                <span>{hourlyDelta === 0 ? '0.0%' : hourlyDelta > 0 ? `+${hourlyDelta}%` : `${hourlyDelta}%`}</span>
+                <span>
+                  {isSessionNew
+                    ? '0.0%'
+                    : hourlyDelta === 0
+                    ? '0.0%'
+                    : hourlyDelta > 0
+                    ? `+${hourlyDelta}%`
+                    : `${hourlyDelta}%`}
+                </span>
               </div>
               <div className="trend-badge-sub">
-                {hourlyDelta === 0 ? 'Stable in 1 hr' : hourlyDelta < 0 ? 'in last 1 hr' : 'Refueled'}
+                {isSessionNew
+                  ? 'Live Baseline'
+                  : hourlyDelta === 0
+                  ? 'Stable in 1 hr'
+                  : hourlyDelta < 0
+                  ? 'in last 1 hr'
+                  : 'Refueled'}
               </div>
             </div>
           </div>
@@ -529,64 +559,96 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) 
           </button>
         </div>
 
-        {/* Smooth Area Chart */}
+        {/* Smooth Dynamic Area Chart */}
         <div className="fuel-trend-chart">
-          <svg viewBox="0 0 340 120" className="trend-svg">
-            <defs>
-              <linearGradient id="fuelTrendAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#16A34A" stopOpacity="0.25" />
-                <stop offset="100%" stopColor="#16A34A" stopOpacity="0.0" />
-              </linearGradient>
-            </defs>
+          {(() => {
+            const effectiveTrendPoints = fuelHistory && fuelHistory.length >= 2
+              ? fuelHistory
+              : [
+                  { timestamp: 1, timeStr: '12 AM', litres: fuel.litres, percentage: clampedPct },
+                  { timestamp: 2, timeStr: '8 AM', litres: fuel.litres, percentage: clampedPct },
+                  { timestamp: 3, timeStr: '12 PM', litres: fuel.litres, percentage: clampedPct },
+                  { timestamp: 4, timeStr: 'NOW', litres: fuel.litres, percentage: clampedPct }
+                ];
 
-            {/* Horizontal Grid Lines */}
-            <line x1="32" y1="20" x2="330" y2="20" stroke="#F3F4F6" strokeWidth="1" />
-            <line x1="32" y1="58" x2="330" y2="58" stroke="#F3F4F6" strokeWidth="1" strokeDasharray="3 3" />
-            <line x1="32" y1="96" x2="330" y2="96" stroke="#F3F4F6" strokeWidth="1" />
+            const tPadLeft = 32;
+            const tPadRight = 25;
+            const tPadTop = 20;
+            const usableWidth = 340 - tPadLeft - tPadRight;
+            const usableHeight = 96 - tPadTop;
 
-            {/* Y-axis Labels */}
-            <text x="24" y="24" fill="#9CA3AF" fontSize="9" textAnchor="end" fontFamily="inherit">100%</text>
-            <text x="24" y="62" fill="#9CA3AF" fontSize="9" textAnchor="end" fontFamily="inherit">50%</text>
-            <text x="24" y="100" fill="#9CA3AF" fontSize="9" textAnchor="end" fontFamily="inherit">0%</text>
+            const trendCoords = effectiveTrendPoints.map((pt, i) => {
+              const x = tPadLeft + (i / Math.max(1, effectiveTrendPoints.length - 1)) * usableWidth;
+              const frac = Math.max(0, Math.min(100, pt.percentage)) / 100;
+              const y = 96 - frac * usableHeight;
+              return { x, y, pt };
+            });
 
-            {/* Area Fill */}
-            <path
-              d="M 32 30 L 175 38 L 195 56 L 315 62 L 315 96 L 32 96 Z"
-              fill="url(#fuelTrendAreaGrad)"
-            />
+            const linePathD = trendCoords.reduce((acc, c, i) => (i === 0 ? `M ${c.x.toFixed(1)} ${c.y.toFixed(1)}` : `${acc} L ${c.x.toFixed(1)} ${c.y.toFixed(1)}`), '');
+            const areaPathD = trendCoords.length > 0
+              ? `${linePathD} L ${trendCoords[trendCoords.length - 1].x.toFixed(1)} 96 L ${trendCoords[0].x.toFixed(1)} 96 Z`
+              : '';
+            const lastTrendPt = trendCoords[trendCoords.length - 1] || { x: 315, y: 62 };
 
-            {/* Green Line Curve */}
-            <path
-              d="M 32 30 L 175 38 L 195 56 L 315 62"
-              fill="none"
-              stroke="#16A34A"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
+            return (
+              <svg viewBox="0 0 340 120" className="trend-svg">
+                <defs>
+                  <linearGradient id="fuelTrendAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#16A34A" stopOpacity="0.25" />
+                    <stop offset="100%" stopColor="#16A34A" stopOpacity="0.0" />
+                  </linearGradient>
+                </defs>
 
-            {/* Current End Dot & Percentage Tag */}
-            <circle cx="315" cy="62" r="4.5" fill="#16A34A" stroke="#FFFFFF" strokeWidth="2" />
-            <text
-              x="315"
-              y="52"
-              fill="#15803D"
-              fontSize="10.5"
-              fontWeight="800"
-              textAnchor="middle"
-              fontFamily="inherit"
-            >
-              {clampedPct.toFixed(0)}%
-            </text>
+                {/* Horizontal Grid Lines */}
+                <line x1="32" y1="20" x2="330" y2="20" stroke="#F3F4F6" strokeWidth="1" />
+                <line x1="32" y1="58" x2="330" y2="58" stroke="#F3F4F6" strokeWidth="1" strokeDasharray="3 3" />
+                <line x1="32" y1="96" x2="330" y2="96" stroke="#F3F4F6" strokeWidth="1" />
 
-            {/* X-axis Timeline Labels */}
-            <text x="35" y="114" fill="#9CA3AF" fontSize="8.5" fontFamily="inherit">12 AM</text>
-            <text x="88" y="114" fill="#9CA3AF" fontSize="8.5" fontFamily="inherit">4 AM</text>
-            <text x="145" y="114" fill="#9CA3AF" fontSize="8.5" fontFamily="inherit">8 AM</text>
-            <text x="200" y="114" fill="#9CA3AF" fontSize="8.5" fontFamily="inherit">12 PM</text>
-            <text x="255" y="114" fill="#9CA3AF" fontSize="8.5" fontFamily="inherit">4 PM</text>
-            <text x="305" y="114" fill="#9CA3AF" fontSize="8.5" fontFamily="inherit">8 PM</text>
-          </svg>
+                {/* Y-axis Labels */}
+                <text x="24" y="24" fill="#9CA3AF" fontSize="9" textAnchor="end" fontFamily="inherit">100%</text>
+                <text x="24" y="62" fill="#9CA3AF" fontSize="9" textAnchor="end" fontFamily="inherit">50%</text>
+                <text x="24" y="100" fill="#9CA3AF" fontSize="9" textAnchor="end" fontFamily="inherit">0%</text>
+
+                {/* Area Fill */}
+                <path
+                  d={areaPathD}
+                  fill="url(#fuelTrendAreaGrad)"
+                />
+
+                {/* Green Line Curve */}
+                <path
+                  d={linePathD}
+                  fill="none"
+                  stroke="#16A34A"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+
+                {/* Current End Dot & Percentage Tag */}
+                <circle cx={lastTrendPt.x} cy={lastTrendPt.y} r="4.5" fill="#16A34A" stroke="#FFFFFF" strokeWidth="2" />
+                <text
+                  x={lastTrendPt.x}
+                  y={Math.max(16, lastTrendPt.y - 8)}
+                  fill="#15803D"
+                  fontSize="10.5"
+                  fontWeight="800"
+                  textAnchor="middle"
+                  fontFamily="inherit"
+                >
+                  {clampedPct.toFixed(0)}%
+                </text>
+
+                {/* X-axis Timeline Labels */}
+                <text x="35" y="114" fill="#9CA3AF" fontSize="8.5" fontFamily="inherit">12 AM</text>
+                <text x="88" y="114" fill="#9CA3AF" fontSize="8.5" fontFamily="inherit">4 AM</text>
+                <text x="145" y="114" fill="#9CA3AF" fontSize="8.5" fontFamily="inherit">8 AM</text>
+                <text x="200" y="114" fill="#9CA3AF" fontSize="8.5" fontFamily="inherit">12 PM</text>
+                <text x="255" y="114" fill="#9CA3AF" fontSize="8.5" fontFamily="inherit">4 PM</text>
+                <text x="305" y="114" fill="#9CA3AF" fontSize="8.5" fontFamily="inherit">8 PM</text>
+              </svg>
+            );
+          })()}
         </div>
       </div>
 
