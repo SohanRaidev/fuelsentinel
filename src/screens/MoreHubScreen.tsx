@@ -46,7 +46,7 @@ export const MoreHubScreen: React.FC<MoreHubScreenProps> = ({ onNavigate, onOpen
     {
       id: 'setup' as ScreenId,
       title: 'Vehicle Fleet Management',
-      desc: `Switch active vehicle (${vehicle.plate}), add haulers, set tank geometry`,
+      desc: `Switch active vehicle (${vehicle.name} - ${vehicle.plate}), dual ESP32 settings & tank geometry`,
       icon: <CarChassisIcon size={24} color="#111827" />,
       tag: 'Multi-Vehicle'
     },

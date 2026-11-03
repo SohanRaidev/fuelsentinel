@@ -28,6 +28,7 @@ export interface VehicleConfig {
   emergencyContactPhone: string;
   geofenceRadiusMeters: number;
   blynkAuthToken?: string;
+  blynkTemplateId?: string;
 }
 
 export interface FuelTelemetry {

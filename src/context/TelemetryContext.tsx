@@ -91,47 +91,35 @@ export interface TelemetryContextType {
 const DEFAULT_FLEET: VehicleConfig[] = [
   {
     id: 'VEH-FS-01',
-    name: 'Divine Hauler 01',
-    plate: 'KA-01-DF-2026',
-    vin: 'DF89G500192841',
-    tankCapacityLitres: 80,
-    fuelType: 'DIESEL',
+    name: 'Ertiga',
+    plate: 'KA-01-ER-2026',
+    vin: 'MA3FBEB1S00192841',
+    tankCapacityLitres: 45,
+    fuelType: 'PETROL',
     tankGeometry: 'RECTANGULAR',
     senderStandard: '240-33',
     calibrationPoints: STANDARD_CALIBRATIONS['240-33'],
     theftDropRateThresholdLpm: 1.2,
     emergencyContactPhone: '+91 98200 12345',
     geofenceRadiusMeters: 100,
+    blynkTemplateId: 'TMPL3V68moLoN',
     blynkAuthToken: '6SR0JUj39EfvIM0Ke-VtPwGR-tUvh43e'
   },
   {
-    id: 'VEH-FS-02',
-    name: 'Divine Express 02',
-    plate: 'KA-19-DF-4412',
-    vin: 'DF1FTFW1ED7NFB',
-    tankCapacityLitres: 65,
-    fuelType: 'DIESEL',
+    id: 'VEH-FS-TEST',
+    name: 'Test Vehicle',
+    plate: 'TEST-UNIT-02',
+    vin: 'TEST-ESP32-BENCH02',
+    tankCapacityLitres: 45,
+    fuelType: 'PETROL',
     tankGeometry: 'RECTANGULAR',
     senderStandard: '240-33',
     calibrationPoints: STANDARD_CALIBRATIONS['240-33'],
     theftDropRateThresholdLpm: 1.2,
     emergencyContactPhone: '+91 98200 12345',
     geofenceRadiusMeters: 100,
-    blynkAuthToken: ''
-  },
-  {
-    id: 'VEH-FS-03',
-    name: 'Divine Logistics 03',
-    plate: 'MH-04-DF-9901',
-    vin: 'DFMPATFR85JHT0',
-    tankCapacityLitres: 120,
-    fuelType: 'DIESEL',
-    tankGeometry: 'RECTANGULAR',
-    senderStandard: '240-33',
-    calibrationPoints: STANDARD_CALIBRATIONS['240-33'],
-    theftDropRateThresholdLpm: 1.2,
-    emergencyContactPhone: '+91 98200 12345',
-    geofenceRadiusMeters: 100
+    blynkTemplateId: 'TMPL3l78cjZm',
+    blynkAuthToken: 'w3qDiwR4o75TUvH5EZpbHUDhNuCitO3A'
   }
 ];
 
@@ -495,10 +483,52 @@ function haversineDistanceKm(lat1: number, lon1: number, lat2: number, lon2: num
 const TelemetryContext = createContext<TelemetryContextType | undefined>(undefined);
 
 export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Multi-vehicle fleet state
+  // Multi-vehicle fleet state (Ertiga & Test Vehicle with individual ESP32 Blynk credentials)
   const [vehicles, setVehicles] = useState<VehicleConfig[]>(() => {
     const saved = localStorage.getItem('fs_fleet');
-    return saved ? JSON.parse(saved) : DEFAULT_FLEET;
+    if (saved) {
+      try {
+        const parsed: VehicleConfig[] = JSON.parse(saved);
+        const hasLegacyNames = parsed.some(
+          (v) =>
+            v.name.includes('Divine Hauler') ||
+            v.name.includes('Divine Express') ||
+            v.name.includes('Divine Logistics')
+        );
+        if (!hasLegacyNames && parsed.length >= 2) {
+          const updated = parsed.map((v) => {
+            if (v.id === 'VEH-FS-01' || v.name.toLowerCase().includes('ertiga')) {
+              return {
+                ...v,
+                name: 'Ertiga',
+                plate: v.plate || 'KA-01-ER-2026',
+                tankCapacityLitres: v.tankCapacityLitres || 45,
+                blynkTemplateId: 'TMPL3V68moLoN',
+                blynkAuthToken: '6SR0JUj39EfvIM0Ke-VtPwGR-tUvh43e'
+              };
+            }
+            if (v.id === 'VEH-FS-TEST' || v.name.toLowerCase().includes('test')) {
+              return {
+                ...v,
+                id: 'VEH-FS-TEST',
+                name: 'Test Vehicle',
+                plate: v.plate || 'TEST-UNIT-02',
+                tankCapacityLitres: v.tankCapacityLitres || 45,
+                blynkTemplateId: 'TMPL3l78cjZm',
+                blynkAuthToken: 'w3qDiwR4o75TUvH5EZpbHUDhNuCitO3A'
+              };
+            }
+            return v;
+          });
+          localStorage.setItem('fs_fleet', JSON.stringify(updated));
+          return updated;
+        }
+      } catch (e) {
+        console.error('Failed to parse cached fleet:', e);
+      }
+    }
+    localStorage.setItem('fs_fleet', JSON.stringify(DEFAULT_FLEET));
+    return DEFAULT_FLEET;
   });
 
   // Trip tracking state
@@ -508,10 +538,9 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   });
   const [selectedTripId, setSelectedTripId] = useState<string | null>('TRIP-101');
 
-
   const [activeVehicleId, setActiveVehicleId] = useState<string>(() => {
     const saved = localStorage.getItem('fs_active_vehicle_id');
-    return saved || 'VEH-FS-849';
+    return saved === 'VEH-FS-TEST' || saved === 'VEH-FS-01' ? saved : 'VEH-FS-01';
   });
 
   const activeVehicle = vehicles.find((v) => v.id === activeVehicleId) || vehicles[0] || DEFAULT_FLEET[0];
@@ -727,10 +756,12 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (target) {
       setActiveVehicleId(id);
       localStorage.setItem('fs_active_vehicle_id', id);
-      const targetToken = target.blynkAuthToken || '';
+      const targetToken = target.blynkAuthToken || (target.id === 'VEH-FS-TEST' ? 'w3qDiwR4o75TUvH5EZpbHUDhNuCitO3A' : '6SR0JUj39EfvIM0Ke-VtPwGR-tUvh43e');
+      const targetTemplateId = target.blynkTemplateId || (target.id === 'VEH-FS-TEST' ? 'TMPL3l78cjZm' : 'TMPL3V68moLoN');
       setBlynkConfig((prev) => ({
         ...prev,
         authToken: targetToken,
+        templateId: targetTemplateId,
         isHardwareOnline: false,
         lastError: null
       }));
@@ -769,12 +800,19 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         return v;
       })
     );
+    if (cfg.blynkAuthToken !== undefined || cfg.blynkTemplateId !== undefined) {
+      setBlynkConfig((prev) => ({
+        ...prev,
+        ...(cfg.blynkAuthToken !== undefined ? { authToken: cfg.blynkAuthToken } : {}),
+        ...(cfg.blynkTemplateId !== undefined ? { templateId: cfg.blynkTemplateId } : {})
+      }));
+    }
     if (cfg.tankCapacityLitres) {
       setFuel((prev) => {
-        const litres = Math.round((prev.percentage / 100) * (cfg.tankCapacityLitres || 80) * 10) / 10;
+        const litres = Math.round((prev.percentage / 100) * (cfg.tankCapacityLitres || 45) * 10) / 10;
         return {
           ...prev,
-          capacityLitres: cfg.tankCapacityLitres || 80,
+          capacityLitres: cfg.tankCapacityLitres || 45,
           litres,
           estimatedRangeKm: Math.round(litres * 8.9)
         };

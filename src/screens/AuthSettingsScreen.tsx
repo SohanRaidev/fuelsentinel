@@ -22,6 +22,10 @@ export const AuthSettingsScreen: React.FC = () => {
   const [testingPing, setTestingPing] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; msg: string } | null>(null);
 
+  React.useEffect(() => {
+    setBlynkForm(blynkConfig);
+  }, [blynkConfig]);
+
   const handleModeChange = (mode: ConnectionMode) => {
     setConnectionMode(mode);
   };

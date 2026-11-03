@@ -143,7 +143,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) 
               marginBottom: '6px'
             }}
           >
-            {vehicles.slice(0, 3).map((v, idx) => {
+            {vehicles.slice(0, 3).map((v) => {
               const isSelected = v.id === vehicle.id;
               return (
                 <button
@@ -167,7 +167,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) 
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  <span>{idx === 1 ? '🚚' : '🚛'}</span>
+                  <span>{v.name.toLowerCase().includes('ertiga') ? '🚗' : v.name.toLowerCase().includes('test') ? '🧪' : '🚙'}</span>
                   <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {v.name}
                   </span>
