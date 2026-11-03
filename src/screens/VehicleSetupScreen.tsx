@@ -52,7 +52,7 @@ export const VehicleSetupScreen: React.FC = () => {
       tankGeometry: 'RECTANGULAR',
       senderStandard: '240-33',
       calibrationPoints: vehicle.calibrationPoints,
-      theftDropRateThresholdLpm: 1.2,
+      theftDropRateThresholdLpm: 0.45,
       emergencyContactPhone: '+91 98200 12345',
       geofenceRadiusMeters: 100,
       blynkTemplateId: newTemplateId.trim() || undefined,

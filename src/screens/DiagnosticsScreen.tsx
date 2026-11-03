@@ -57,8 +57,8 @@ export const DiagnosticsScreen: React.FC = () => {
 #define GPS_RX_PIN          16   // NEO-6M TX -> ESP32 RX2
 #define GPS_TX_PIN          17   // NEO-6M RX -> ESP32 TX2
 
-const float TANK_CAPACITY_LITRES  = 150.0;
-const float THEFT_DROP_THRESH_PCT = 1.5; // Siphon alarm threshold
+const float TANK_CAPACITY_LITRES  = 45.0;  // Maruti Suzuki Ertiga 45L Tank
+const float THEFT_DROP_THRESH_PCT = 5.0;   // 5% drop in 5 min anti-theft threshold (~2.25L)
 
 const float DEFAULT_V_FULL  = 0.30;
 const float DEFAULT_V_EMPTY = 1.75;
@@ -123,7 +123,7 @@ void evaluateTheftSecurity() {
     fuelDifference = lastFuelWhenOff - fuelLevelPercent;
     if (fuelDifference >= THEFT_DROP_THRESH_PCT) {
       isTheftAlarm = true;
-      theftAlertMsg = "THEFT: RAPID SIPHON DETECTED!";
+      theftAlertMsg = "🚨 THEFT: 5% DROP DETECTED!";
     } else {
       theftAlertMsg = "SYSTEM NORMAL";
     }

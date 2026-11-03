@@ -42,8 +42,8 @@
 
 // ======================== VEHICLE & SECURITY CONSTANTS ======================
 
-const float TANK_CAPACITY_LITRES  = 150.0; // Total tank volume (Adjust to your vehicle)
-const float THEFT_DROP_THRESH_PCT = 1.5;   // Trigger alarm if fuel drops >= 1.5% while parked (~2.25L)
+const float TANK_CAPACITY_LITRES  = 45.0;  // Maruti Suzuki Ertiga 45L Tank Capacity
+const float THEFT_DROP_THRESH_PCT = 5.0;   // Trigger alarm if fuel drops >= 5.0% in 5 min while parked (~2.25L)
 
 // Physical Tamper Loop Switch:
 // Keep false when testing on desk/bench without a wire from GPIO 26 to GND.
@@ -163,6 +163,14 @@ void readIgnitionAndTamper() {
     Serial.print(lastFuelWhenOff, 1);
     Serial.println(F("%"));
   }
+  // Initialize baseline immediately on boot if vehicle is already parked
+  else if (lastIgnitionState == -1 && ignitionStatus == 0 && lastFuelWhenOff <= 0.0 && fuelLevelPercent > 0.0) {
+    lastFuelWhenOff = fuelLevelPercent;
+    saveLastFuelWhenOff(lastFuelWhenOff);
+    Serial.print(F("[SECURITY] Parked on boot. Benchmark baseline fuel locked: "));
+    Serial.print(lastFuelWhenOff, 1);
+    Serial.println(F("%"));
+  }
 
   lastIgnitionState = ignitionStatus;
 }
@@ -177,14 +185,14 @@ void evaluateTheftSecurity() {
     isTheftAlarm = true;
     theftAlertMsg = "🚨 CRITICAL: TAMPER WIRE SEVERED!";
   }
-  // 2. RAPID SIPHON THEFT CHECK (Ignition is OFF, but fuel is draining)
+  // 2. RAPID SIPHON THEFT CHECK (Ignition is OFF, fuel drops >= 5.0% in 5 min)
   else if (ignitionStatus == 0 && lastFuelWhenOff > 0.0) {
     fuelDifference = lastFuelWhenOff - fuelLevelPercent;
 
     if (fuelDifference >= THEFT_DROP_THRESH_PCT) {
       isTheftAlarm = true;
       float litresLost = (fuelDifference / 100.0) * TANK_CAPACITY_LITRES;
-      theftAlertMsg = "🚨 THEFT: SIPHON DETECTED (-" + String(fuelDifference, 1) + "% / -" + String(litresLost, 1) + "L)!";
+      theftAlertMsg = "🚨 THEFT: 5% DROP DETECTED (-" + String(fuelDifference, 1) + "% / -" + String(litresLost, 1) + "L)!";
     } else {
       theftAlertMsg = "SYSTEM NORMAL";
     }

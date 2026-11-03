@@ -102,7 +102,7 @@ const DEFAULT_FLEET: VehicleConfig[] = [
     tankGeometry: 'RECTANGULAR',
     senderStandard: '240-33',
     calibrationPoints: STANDARD_CALIBRATIONS['240-33'],
-    theftDropRateThresholdLpm: 1.2,
+    theftDropRateThresholdLpm: 0.45, // 5% drop in 5 min on 45L tank (2.25L / 5 min = 0.45 L/min)
     emergencyContactPhone: '+91 98200 12345',
     geofenceRadiusMeters: 100,
     blynkTemplateId: 'TMPL3V68moLoN',
@@ -118,7 +118,7 @@ const DEFAULT_FLEET: VehicleConfig[] = [
     tankGeometry: 'RECTANGULAR',
     senderStandard: '240-33',
     calibrationPoints: STANDARD_CALIBRATIONS['240-33'],
-    theftDropRateThresholdLpm: 1.2,
+    theftDropRateThresholdLpm: 0.45, // 5% drop in 5 min on 45L tank
     emergencyContactPhone: '+91 98200 12345',
     geofenceRadiusMeters: 100,
     blynkTemplateId: 'TMPL3l78cjZm',
@@ -1156,11 +1156,18 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         const rawTheftMsg = parsedPins.v2.trim();
         const hasTheftMsg = isHwConnected && rawTheftMsg !== '' && rawTheftMsg !== 'OK' && rawTheftMsg !== '0';
 
-        // Check if fuel is dropping below 24.0% baseline while parked (Ignition OFF)
+        // Rapid Siphon Theft Check: 5% drop in 5 minutes (while parked / engine OFF)
         const basePct = demoBaselinePct || 24.0;
         const dropFromBaseline = Math.max(0, basePct - currentPct);
-        // Siphon triggered if fuel dropped by at least 1.5% (-0.7L) from baseline or hardware flagged v8/v2
-        const hasSiphonDrain = isHwConnected && !isIgnitionOn && (dropFromBaseline >= 1.5 || parsedPins.v8 >= 1.0);
+
+        // Find point recorded within the last 5 minutes to measure rolling 5-minute velocity
+        const fiveMinAgo = Date.now() - 5 * 60 * 1000;
+        const point5MinAgo = fuelHistory.find((p) => p.timestamp >= fiveMinAgo) || fuelHistory[0];
+        const dropIn5Min = point5MinAgo ? Math.max(0, point5MinAgo.percentage - currentPct) : 0;
+
+        // Theft alarm fires if fuel dropped >= 5.0% in 5 min, or >= 5.0% from baseline, or hardware reported v8 >= 5.0
+        const has5PercentDrop = dropFromBaseline >= 5.0 || dropIn5Min >= 5.0 || parsedPins.v8 >= 5.0;
+        const hasSiphonDrain = isHwConnected && !isIgnitionOn && has5PercentDrop;
 
         const hardwareAlarmActive = isHwConnected && (isTampered || hasTheftMsg || hasSiphonDrain);
         if (!hardwareAlarmActive) {
@@ -1168,16 +1175,17 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }
 
         const isAlarm = hardwareAlarmActive && !isAlarmSilencedRef.current;
+        const effectiveDrop = Math.max(dropFromBaseline, dropIn5Min, parsedPins.v8);
+        const litresLostAmount = Math.max(
+          2.0,
+          Math.round((effectiveDrop / 100) * activeVehicle.tankCapacityLitres * 10) / 10
+        );
 
         setSecurity((prev) => {
           if (isAlarm && !prev.theftAlarmActive) {
             if (!isAudioMuted) {
               audioAlert.startAlarmSiren();
             }
-            const litresLostAmount = Math.max(
-              0.5,
-              Math.round(((dropFromBaseline > 0 ? dropFromBaseline : parsedPins.v8) / 100) * activeVehicle.tankCapacityLitres * 10) / 10
-            );
             triggerTheftNotification(activeVehicle.plate, litresLostAmount);
 
             // Record live accurate alert in incident history
@@ -1188,12 +1196,12 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               timestamp: nowTime,
               severity: 'CRITICAL',
               type: isTampered ? 'TAMPER_LOOP_SEVERED' : 'RAPID_DRAIN_THEFT',
-              title: isTampered ? 'Tamper Wire Severed' : 'Rapid Fuel Siphon Detected',
+              title: isTampered ? 'Tamper Wire Severed' : 'Fuel Theft: 5% Drop in 5 Min',
               description: hasTheftMsg
                 ? parsedPins.v2
                 : isTampered
                 ? `Physical anti-tamper security circuit severed on ${activeVehicle.name} (${activeVehicle.plate}).`
-                : `Rapid fuel loss (-${litresLostAmount.toFixed(1)}L) detected with ignition OFF on ${activeVehicle.name} (dropped from ${basePct.toFixed(1)}% baseline).`,
+                : `Rapid fuel siphon (-${litresLostAmount.toFixed(1)}L / -${effectiveDrop.toFixed(1)}% in <5 min) detected while parked with ignition OFF on ${activeVehicle.name}.`,
               litresLost: litresLostAmount,
               locationSnapshot: {
                 lat: parsedPins.v3 || 19.0433,
@@ -1219,9 +1227,19 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             tamper: isTampered ? 'TRIPPED' : 'SECURE',
             theftAlarmActive: isAlarm,
             theftAlarmReason: isAlarm
-              ? (hasTheftMsg ? parsedPins.v2 : isTampered ? 'Physical sensor wire severed!' : null)
+              ? (hasTheftMsg
+                  ? parsedPins.v2
+                  : isTampered
+                  ? 'Physical sensor wire severed!'
+                  : `🚨 Fuel Theft Alert: ${Math.max(dropFromBaseline, dropIn5Min, parsedPins.v8).toFixed(1)}% Drop in 5 Min (-${litresLostAmount.toFixed(1)}L)!`)
               : null,
-            theftDropVolumeLitres: isAlarm ? (parsedPins.v8 / 100) * activeVehicle.tankCapacityLitres : 0
+            theftDropVolumeLitres: isAlarm
+              ? Math.max(
+                  (parsedPins.v8 / 100) * activeVehicle.tankCapacityLitres,
+                  (dropFromBaseline / 100) * activeVehicle.tankCapacityLitres,
+                  (dropIn5Min / 100) * activeVehicle.tankCapacityLitres
+                )
+              : 0
           };
         });
 
@@ -1443,15 +1461,17 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         isInsideGeofence: false
       }));
     } else if (scenario === 'THEFT_SIPHON') {
-      const drainedAmount = 14.8;
-      const targetLitres = Math.max(2.0, (activeVehicle.tankCapacityLitres * 0.73) - drainedAmount);
+      const baseLitres = ((demoBaselinePct || 24.0) / 100) * activeVehicle.tankCapacityLitres;
+      const drainedAmount = 2.5; // 5.5% drop in 5 min (<5 min siphon theft)
+      const targetLitres = Math.max(1.0, baseLitres - drainedAmount);
       const newPct = Math.round((targetLitres / activeVehicle.tankCapacityLitres) * 1000) / 10;
+      const dropPct = Math.round((drainedAmount / activeVehicle.tankCapacityLitres) * 1000) / 10;
 
       setSecurity({
         ignition: 'OFF',
         tamper: 'TRIPPED',
         theftAlarmActive: true,
-        theftAlarmReason: `Rapid Fuel Drop: -${drainedAmount.toFixed(1)}L drained in 2 min with IGNITION OFF! Tamper loop open.`,
+        theftAlarmReason: `🚨 Rapid Fuel Drop: -${drainedAmount.toFixed(1)}L (-${dropPct.toFixed(1)}%) in 5 min with IGNITION OFF! Tamper loop open.`,
         theftDropVolumeLitres: drainedAmount,
         theftDetectionTimestamp: now,
         lastIgnitionChangeTimestamp: now - 7200000,

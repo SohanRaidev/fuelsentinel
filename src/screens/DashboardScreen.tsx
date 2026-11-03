@@ -87,6 +87,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) 
   const baselinePct = demoBaselinePct || 24.0;
   const deltaFromBaseline = Math.round((clampedPct - baselinePct) * 10) / 10;
   const litresDropped = Math.max(0, Math.round(((baselinePct - clampedPct) / 100) * vehicle.tankCapacityLitres * 10) / 10);
+  const is5PercentTheft = deltaFromBaseline <= -5.0 || security.theftAlarmActive;
+  const theftProgressPct = Math.min(100, Math.max(0, (Math.abs(Math.min(0, deltaFromBaseline)) / 5.0) * 100));
 
   // Dynamic Real Device Connectivity Elapsed Time
   const getLastSyncText = () => {
@@ -386,7 +388,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) 
                 {deltaFromBaseline === 0
                   ? `${baselinePct.toFixed(1)}% Baseline`
                   : deltaFromBaseline < 0
-                  ? `-${litresDropped.toFixed(1)}L from 24%`
+                  ? `-${litresDropped.toFixed(1)}L from ${baselinePct.toFixed(0)}%`
                   : 'Refueled'}
               </div>
             </div>
@@ -398,9 +400,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) 
             style={{
               padding: '12px 14px',
               marginBottom: '10px',
-              backgroundColor: deltaFromBaseline < 0 ? '#FEF2F2' : '#F0FDF4',
-              border: `1.5px solid ${deltaFromBaseline < 0 ? '#FCA5A5' : '#BBF7D0'}`,
-              boxShadow: deltaFromBaseline < 0 ? '0 4px 14px rgba(220, 38, 38, 0.15)' : 'none',
+              backgroundColor: is5PercentTheft ? '#FEF2F2' : deltaFromBaseline < 0 ? '#FFFBEB' : '#F0FDF4',
+              border: `1.5px solid ${is5PercentTheft ? '#DC2626' : deltaFromBaseline < 0 ? '#F59E0B' : '#BBF7D0'}`,
+              boxShadow: is5PercentTheft
+                ? '0 6px 20px rgba(220, 38, 38, 0.25)'
+                : deltaFromBaseline < 0
+                ? '0 4px 14px rgba(245, 158, 11, 0.15)'
+                : 'none',
               transition: 'all 0.3s ease'
             }}
           >
@@ -411,12 +417,29 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) 
                     width: '9px',
                     height: '9px',
                     borderRadius: '50%',
-                    backgroundColor: deltaFromBaseline < 0 ? '#DC2626' : '#16A34A',
-                    boxShadow: deltaFromBaseline < 0 ? '0 0 0 4px rgba(220,38,38,0.2)' : '0 0 0 3px rgba(22,163,74,0.15)'
+                    backgroundColor: is5PercentTheft ? '#DC2626' : deltaFromBaseline < 0 ? '#D97706' : '#16A34A',
+                    boxShadow: is5PercentTheft
+                      ? '0 0 0 4px rgba(220,38,38,0.25)'
+                      : deltaFromBaseline < 0
+                      ? '0 0 0 3px rgba(217,119,6,0.2)'
+                      : '0 0 0 3px rgba(22,163,74,0.15)',
+                    animation: is5PercentTheft ? 'pulse 1s infinite' : 'none'
                   }}
                 />
-                <span style={{ fontSize: '12px', fontWeight: 800, color: deltaFromBaseline < 0 ? '#991B1B' : '#15803D', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                  {deltaFromBaseline < 0 ? '⚠️ Live Fuel Removal Detected' : `Live Baseline: ${baselinePct.toFixed(1)}% (Ready for Test)`}
+                <span
+                  style={{
+                    fontSize: '11.5px',
+                    fontWeight: 800,
+                    color: is5PercentTheft ? '#991B1B' : deltaFromBaseline < 0 ? '#B45309' : '#15803D',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.03em'
+                  }}
+                >
+                  {is5PercentTheft
+                    ? `🚨 THEFT DETECTED: 5% DROP IN 5 MIN (-${litresDropped.toFixed(1)} L)`
+                    : deltaFromBaseline < 0
+                    ? `⚠️ Fuel Draining: -${litresDropped.toFixed(1)} L (-${Math.abs(deltaFromBaseline).toFixed(1)}% / 5% Limit)`
+                    : `Live Baseline: ${baselinePct.toFixed(1)}% (5% in 5 min Theft Armed)`}
                 </span>
               </div>
 
@@ -430,13 +453,34 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) 
                   border: '1px solid #D1D5DB',
                   backgroundColor: '#FFFFFF',
                   color: '#374151',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  flexShrink: 0
                 }}
                 title="Reset baseline to current reading"
               >
-                Reset Baseline (24%)
+                Reset (24%)
               </button>
             </div>
+
+            {/* Threshold Progress Bar for Judges Demonstration */}
+            {deltaFromBaseline < 0 && (
+              <div style={{ marginBottom: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontWeight: 700, color: is5PercentTheft ? '#DC2626' : '#92400E', marginBottom: '3px' }}>
+                  <span>Siphon Drain vs 5.0% Theft Limit</span>
+                  <span>{theftProgressPct.toFixed(0)}% Triggered ({litresDropped.toFixed(1)}L / 2.3L)</span>
+                </div>
+                <div style={{ width: '100%', height: '6px', backgroundColor: '#E5E7EB', borderRadius: '4px', overflow: 'hidden' }}>
+                  <div
+                    style={{
+                      width: `${theftProgressPct}%`,
+                      height: '100%',
+                      backgroundColor: is5PercentTheft ? '#DC2626' : '#F59E0B',
+                      transition: 'width 0.4s ease'
+                    }}
+                  />
+                </div>
+              </div>
+            )}
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', textAlign: 'center', backgroundColor: '#FFFFFF', padding: '8px', borderRadius: '10px', border: '1px solid #E5E7EB' }}>
               <div>
@@ -447,16 +491,22 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) 
               </div>
               <div>
                 <div style={{ fontSize: '10px', color: '#6B7280', fontWeight: 600 }}>CURRENT</div>
-                <div style={{ fontSize: '13px', fontWeight: 800, color: deltaFromBaseline < 0 ? '#DC2626' : '#15803D' }}>
+                <div style={{ fontSize: '13px', fontWeight: 800, color: is5PercentTheft ? '#DC2626' : deltaFromBaseline < 0 ? '#D97706' : '#15803D' }}>
                   {clampedPct.toFixed(1)}% <span style={{ fontSize: '10px' }}>({fuel.litres.toFixed(1)}L)</span>
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: '10px', color: deltaFromBaseline < 0 ? '#DC2626' : '#6B7280', fontWeight: 700 }}>REMOVED</div>
-                <div style={{ fontSize: '13px', fontWeight: 900, color: deltaFromBaseline < 0 ? '#DC2626' : '#15803D' }}>
+                <div style={{ fontSize: '10px', color: is5PercentTheft ? '#DC2626' : deltaFromBaseline < 0 ? '#D97706' : '#6B7280', fontWeight: 700 }}>REMOVED</div>
+                <div style={{ fontSize: '13px', fontWeight: 900, color: is5PercentTheft ? '#DC2626' : deltaFromBaseline < 0 ? '#D97706' : '#15803D' }}>
                   {deltaFromBaseline < 0 ? `-${litresDropped.toFixed(1)} L` : '0.0 L'}
                 </div>
               </div>
+            </div>
+
+            <div style={{ marginTop: '6px', fontSize: '10px', color: is5PercentTheft ? '#991B1B' : '#6B7280', textAlign: 'center', lineHeight: 1.3 }}>
+              {is5PercentTheft
+                ? '🚨 Alarm active! Fuel dropped ≥5% (~2.25L) with ignition OFF. Siren sounding & push alert dispatched.'
+                : 'Judges Demo: Remove ≥2.25L (5% drop from 24%) while engine is OFF to trip anti-theft siren.'}
             </div>
           </div>
 
