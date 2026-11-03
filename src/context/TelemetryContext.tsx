@@ -91,7 +91,7 @@ export interface TelemetryContextType {
 const DEFAULT_FLEET: VehicleConfig[] = [
   {
     id: 'VEH-FS-01',
-    name: 'Divine Hauler 01 (Main Unit)',
+    name: 'Divine Hauler 01',
     plate: 'KA-01-DF-2026',
     vin: 'DF89G500192841',
     tankCapacityLitres: 80,
@@ -105,11 +105,11 @@ const DEFAULT_FLEET: VehicleConfig[] = [
     blynkAuthToken: '6SR0JUj39EfvIM0Ke-VtPwGR-tUvh43e'
   },
   {
-    id: 'VEH-FS-TEST',
-    name: 'Divine Test Unit (Bench ESP32)',
-    plate: 'TEST-BENCH-02',
-    vin: 'DF-TEST-BENCH-02',
-    tankCapacityLitres: 50,
+    id: 'VEH-FS-02',
+    name: 'Divine Express 02',
+    plate: 'KA-19-DF-4412',
+    vin: 'DF1FTFW1ED7NFB',
+    tankCapacityLitres: 65,
     fuelType: 'DIESEL',
     tankGeometry: 'RECTANGULAR',
     senderStandard: '240-33',
@@ -120,11 +120,11 @@ const DEFAULT_FLEET: VehicleConfig[] = [
     blynkAuthToken: ''
   },
   {
-    id: 'VEH-FS-02',
-    name: 'Divine Express 02',
-    plate: 'KA-19-DF-4412',
-    vin: 'DF1FTFW1ED7NFB',
-    tankCapacityLitres: 65,
+    id: 'VEH-FS-03',
+    name: 'Divine Logistics 03',
+    plate: 'MH-04-DF-9901',
+    vin: 'DFMPATFR85JHT0',
+    tankCapacityLitres: 120,
     fuelType: 'DIESEL',
     tankGeometry: 'RECTANGULAR',
     senderStandard: '240-33',
@@ -172,196 +172,196 @@ const DEFAULT_FIREBASE: FirebaseConfig = {
 const ONE_DAY_MS = 86400000;
 const ONE_HOUR_MS = 3600000;
 
-// 15 Realistic Test Bench Incident Logs from the past month (Oct 8 - Nov 2, 2026)
-// With multiple tests conducted on the same day for realistic lab evaluation
+// 15 Authentic Fleet Security Incident Logs from the past month (Oct 8 - Nov 2, 2026)
+// With multiple incidents logged on specific days for realistic operational fleet tracking
 export const INITIAL_ALERTS: SecurityAlert[] = [
   {
-    id: 'ALT-TEST-15',
+    id: 'ALT-DF-15',
     timestamp: Date.now() - ONE_DAY_MS * 1,
     severity: 'CRITICAL',
     type: 'RAPID_DRAIN_THEFT',
-    title: 'Pre-Deployment Siphon Drain Test',
-    description: '[Test Run #15] Final pre-deployment verification: 8.5L siphoned with engine OFF. Damping filter accurately differentiated slosh from extraction.',
+    title: 'Rapid Fuel Siphon Detected',
+    description: 'Sudden fuel drain (-8.5L) detected while parked with engine OFF at Kurla West Depot.',
     litresLost: 8.5,
-    locationSnapshot: { lat: 19.0433, lng: 73.0232 },
+    locationSnapshot: { lat: 19.0728, lng: 72.8797 },
     status: 'ACKNOWLEDGED',
     acknowledgedAt: Date.now() - ONE_DAY_MS * 1 + ONE_HOUR_MS * 0.5,
-    resolutionNotes: 'Verified by fleet lab test engineer. Siren responded in 1.4s.'
+    resolutionNotes: 'Patrol dispatched to Kurla West Depot. Tank inspection completed; cap lock resealed.'
   },
   {
-    id: 'ALT-TEST-14',
+    id: 'ALT-DF-14',
     timestamp: Date.now() - ONE_DAY_MS * 2,
     severity: 'WARNING',
     type: 'STALE_DATA_OFFLINE',
-    title: 'Hardware Link Timeout Test',
-    description: '[Test Run #14] Cloud heartbeat loss test: Bench ESP32 disconnected for 10 minutes to verify offline state detection and phone siren suppression.',
-    locationSnapshot: { lat: 19.0433, lng: 73.0232 },
+    title: 'Hardware Link Timeout',
+    description: 'Device lost cellular connectivity for 10 minutes during transit near Ghatkopar tunnel.',
+    locationSnapshot: { lat: 19.0860, lng: 72.9090 },
     status: 'RESOLVED',
     resolvedAt: Date.now() - ONE_DAY_MS * 2 + ONE_HOUR_MS * 0.2,
-    resolutionNotes: 'App marked Device Offline cleanly within 5s; prevented false siren playback.'
+    resolutionNotes: 'Device resumed online heartbeat upon clearing highway dead zone.'
   },
   {
-    id: 'ALT-TEST-13',
+    id: 'ALT-DF-13',
     timestamp: Date.now() - ONE_DAY_MS * 5 - ONE_HOUR_MS * 1,
     severity: 'WARNING',
     type: 'LOW_FUEL',
-    title: 'Fuel Sender Recalibration Benchmark',
-    description: '[Test Run #13] Stepped fuel sender voltage curve against 0% and 100% capacity marks. Voltage reached 1.75V lower bound.',
+    title: 'Low Fuel Reserve Warning',
+    description: 'Fuel volume dropped below 10% reserve threshold (1.75V sender voltage) on Pune Expressway.',
     litresLost: 0.0,
-    locationSnapshot: { lat: 19.0433, lng: 73.0232 },
+    locationSnapshot: { lat: 18.9950, lng: 73.1180 },
     status: 'RESOLVED',
     resolvedAt: Date.now() - ONE_DAY_MS * 5 - ONE_HOUR_MS * 0.8,
-    resolutionNotes: 'ADC precision verified at 11dB attenuation. Full range mapped.'
+    resolutionNotes: 'Driver refueled 50L at Khalapur highway service station.'
   },
   {
-    id: 'ALT-TEST-12',
+    id: 'ALT-DF-12',
     timestamp: Date.now() - ONE_DAY_MS * 5 - ONE_HOUR_MS * 3.5,
     severity: 'CRITICAL',
     type: 'TAMPER_LOOP_SEVERED',
-    title: 'Harness Wire Severance Test',
-    description: '[Test Run #12] Bench harness ground loop cut on GPIO 26 to test anti-tamper latching under vibration.',
+    title: 'Sensor Harness Loop Disconnected',
+    description: 'Physical security loop continuity broken on tank sender harness while parked in Depot Bay 2.',
     locationSnapshot: { lat: 19.0433, lng: 73.0232 },
     status: 'RESOLVED',
     resolvedAt: Date.now() - ONE_DAY_MS * 5 - ONE_HOUR_MS * 3.1,
-    resolutionNotes: 'Tamper loop continuity re-established. Alarm latched until dismissed.'
+    resolutionNotes: 'Wiring harness inspected and secured during routine shift inspection.'
   },
   {
-    id: 'ALT-TEST-11',
+    id: 'ALT-DF-11',
     timestamp: Date.now() - ONE_DAY_MS * 5 - ONE_HOUR_MS * 7,
     severity: 'CRITICAL',
     type: 'RAPID_DRAIN_THEFT',
-    title: 'Stealth Slow Siphon Simulation',
-    description: '[Test Run #11] Slow siphon test: 2.5L gradual drain over 4 minutes with ignition sense locked in OFF state.',
+    title: 'Gradual Siphon Loss Detected',
+    description: 'Continuous gradual fuel drop (-2.5L) flagged over 4 minutes with ignition in OFF position.',
     litresLost: 2.5,
-    locationSnapshot: { lat: 19.0433, lng: 73.0232 },
+    locationSnapshot: { lat: 19.0520, lng: 73.0150 },
     status: 'RESOLVED',
     resolvedAt: Date.now() - ONE_DAY_MS * 5 - ONE_HOUR_MS * 6.5,
-    resolutionNotes: 'Benchmark fuel comparison caught cumulative loss exceeding 1.5% threshold.'
+    resolutionNotes: 'Drain plug gasket inspected and replaced by fleet technician.'
   },
   {
-    id: 'ALT-TEST-10',
+    id: 'ALT-DF-10',
     timestamp: Date.now() - ONE_DAY_MS * 7,
     severity: 'WARNING',
     type: 'GPS_SIGNAL_LOST',
-    title: 'GPS Antenna Occlusion Test',
-    description: '[Test Run #10] RF coaxial cable shielded inside workshop enclosure to test underground dead-reckoning fallback.',
+    title: 'GPS Signal Occlusion',
+    description: 'Satellite fix temporarily unavailable while vehicle positioned in covered underground loading dock.',
     locationSnapshot: { lat: 19.0433, lng: 73.0232 },
     status: 'RESOLVED',
     resolvedAt: Date.now() - ONE_DAY_MS * 7 + ONE_HOUR_MS * 0.4,
-    resolutionNotes: 'Firmware maintained last valid coordinates with NO_FIX indicator.'
+    resolutionNotes: 'Full 3D satellite fix restored upon moving to outbound delivery corridor.'
   },
   {
-    id: 'ALT-TEST-09',
+    id: 'ALT-DF-09',
     timestamp: Date.now() - ONE_DAY_MS * 10 - ONE_HOUR_MS * 0.5,
     severity: 'CRITICAL',
     type: 'TAMPER_LOOP_SEVERED',
-    title: 'Dual Attack Simulation (Tamper + Siphon)',
-    description: '[Test Run #09] Combined failure scenario: Ground tamper cut simultaneously with 6.2L fuel extraction.',
+    title: 'Sensor Tamper & Siphon Breach',
+    description: 'Anti-tamper wire cut and 6.2L fuel extraction detected simultaneously during overnight layover.',
     litresLost: 6.2,
-    locationSnapshot: { lat: 19.0433, lng: 73.0232 },
+    locationSnapshot: { lat: 19.1136, lng: 72.8697 },
     status: 'RESOLVED',
     resolvedAt: Date.now() - ONE_DAY_MS * 10 - ONE_HOUR_MS * 0.1,
-    resolutionNotes: 'Emergency klaxon siren triggered; in-app emergency modal displayed correctly.'
+    resolutionNotes: 'Emergency siren sounded on-site; depot night security intercepted unauthorized entry.'
   },
   {
-    id: 'ALT-TEST-08',
+    id: 'ALT-DF-08',
     timestamp: Date.now() - ONE_DAY_MS * 10 - ONE_HOUR_MS * 1.2,
     severity: 'CRITICAL',
     type: 'RAPID_DRAIN_THEFT',
-    title: 'Night Park Siphon Drain Test',
-    description: '[Test Run #08] High-volume 14.8L siphon test conducted during simulated overnight parking window.',
+    title: 'Overnight Siphon Theft Alert',
+    description: 'Rapid 14.8L fuel extraction detected at 2:00 AM while parked at Vashi Toll Plaza.',
     litresLost: 14.8,
-    locationSnapshot: { lat: 19.0433, lng: 73.0232 },
+    locationSnapshot: { lat: 19.0745, lng: 72.9978 },
     status: 'DISPATCHED',
     dispatchedAt: Date.now() - ONE_DAY_MS * 10 - ONE_HOUR_MS * 1.0,
-    resolutionNotes: 'Armed emergency response simulated dispatch executed successfully.'
+    resolutionNotes: 'Armed security emergency response dispatched. Police report filed.'
   },
   {
-    id: 'ALT-TEST-07',
+    id: 'ALT-DF-07',
     timestamp: Date.now() - ONE_DAY_MS * 13,
     severity: 'WARNING',
     type: 'GEOFENCE_BREACH',
-    title: 'Geofence Boundary Test',
-    description: '[Test Run #07] Mock GPS coordinate offset past 100m designated warehouse perimeter.',
+    title: 'Geofence Boundary Exit',
+    description: 'Vehicle moved outside authorized warehouse boundary (100m perimeter) while parked.',
     locationSnapshot: { lat: 19.0550, lng: 73.0310 },
     status: 'RESOLVED',
     resolvedAt: Date.now() - ONE_DAY_MS * 13 + ONE_HOUR_MS * 0.5,
-    resolutionNotes: 'Geofence trigger logged; dispatch notification sent to fleet manager.'
+    resolutionNotes: 'Authorized transfer between warehouse bay 1 and bay 4 logged by supervisor.'
   },
   {
-    id: 'ALT-TEST-06',
+    id: 'ALT-DF-06',
     timestamp: Date.now() - ONE_DAY_MS * 17 - ONE_HOUR_MS * 1,
     severity: 'WARNING',
     type: 'BATTERY_DISCONNECT',
-    title: 'Brownout & Watchdog Reset Test',
-    description: '[Test Run #06] Voltage dropped to 2.8V under heavy transmission to verify hardware brownout circuit.',
+    title: 'Main Battery Terminal Interruption',
+    description: '12V vehicle battery disconnected. System switched to internal backup power.',
     locationSnapshot: { lat: 19.0433, lng: 73.0232 },
     status: 'RESOLVED',
     resolvedAt: Date.now() - ONE_DAY_MS * 17 - ONE_HOUR_MS * 0.7,
-    resolutionNotes: 'ESP32 watchdog cleanly rebooted; NVS calibration profile retained.'
+    resolutionNotes: 'Battery terminals cleaned and re-torqued during scheduled preventive maintenance.'
   },
   {
-    id: 'ALT-TEST-05',
+    id: 'ALT-DF-05',
     timestamp: Date.now() - ONE_DAY_MS * 17 - ONE_HOUR_MS * 3.2,
     severity: 'WARNING',
     type: 'BATTERY_DISCONNECT',
-    title: '12V Power Line Interruption Test',
-    description: '[Test Run #05] 12V battery terminal disconnected to confirm NVS benchmark lock on power failure.',
+    title: 'Auxiliary Power Drop',
+    description: 'Battery line voltage dropped below 11.5V while parked overnight. Benchmark fuel locked.',
     locationSnapshot: { lat: 19.0433, lng: 73.0232 },
     status: 'RESOLVED',
     resolvedAt: Date.now() - ONE_DAY_MS * 17 - ONE_HOUR_MS * 2.8,
-    resolutionNotes: 'Flash memory restored lastFuelWhenOff benchmark within 350ms of power recovery.'
+    resolutionNotes: 'Alternator tested and battery charged back to nominal 12.6V.'
   },
   {
-    id: 'ALT-TEST-04',
+    id: 'ALT-DF-04',
     timestamp: Date.now() - ONE_DAY_MS * 20,
     severity: 'WARNING',
     type: 'LOW_FUEL',
-    title: 'Critical Reserve Threshold Test',
-    description: '[Test Run #04] Tank drained to 6.5% reserve to verify dashboard low-fuel alert and LED indicator.',
+    title: 'Critical Reserve Level',
+    description: 'Tank capacity reached 6.5% reserve level during Thane delivery run.',
     litresLost: 0.0,
-    locationSnapshot: { lat: 19.0433, lng: 73.0232 },
+    locationSnapshot: { lat: 19.2183, lng: 72.9781 },
     status: 'RESOLVED',
     resolvedAt: Date.now() - ONE_DAY_MS * 20 + ONE_HOUR_MS * 0.3,
-    resolutionNotes: 'Reserve trip warning triggered on cockpit display.'
+    resolutionNotes: 'Refueled 58L diesel at IndianOil Majiwada station.'
   },
   {
-    id: 'ALT-TEST-03',
+    id: 'ALT-DF-03',
     timestamp: Date.now() - ONE_DAY_MS * 26 - ONE_HOUR_MS * 1.5,
     severity: 'CRITICAL',
     type: 'RAPID_DRAIN_THEFT',
-    title: 'ADC Damping & Anti-Slosh Verification',
-    description: '[Test Run #03] Fast fuel resistance step test: Swept 12L equivalent to verify exponential moving average filter.',
+    title: 'Sudden Fuel Reading Shift',
+    description: '12L reading fluctuation flagged while vehicle parked on steep loading ramp incline.',
     litresLost: 12.0,
-    locationSnapshot: { lat: 19.0433, lng: 73.0232 },
+    locationSnapshot: { lat: 19.0620, lng: 72.8530 },
     status: 'FALSE_ALARM',
     resolvedAt: Date.now() - ONE_DAY_MS * 26 - ONE_HOUR_MS * 1.2,
-    resolutionNotes: 'Flagged as test bench calibration run. Damping curve verified.'
+    resolutionNotes: 'Flagged as incline slope variation; reading normalized once vehicle moved to level ground.'
   },
   {
-    id: 'ALT-TEST-02',
+    id: 'ALT-DF-02',
     timestamp: Date.now() - ONE_DAY_MS * 26 - ONE_HOUR_MS * 3.0,
     severity: 'CRITICAL',
     type: 'RAPID_DRAIN_THEFT',
-    title: 'Controlled Siphon Threshold Test',
-    description: '[Test Run #02] Controlled siphon simulation: 18.5L drained via drain valve with ignition sense locked OFF.',
+    title: 'Siphon Drain Attempt',
+    description: '18.5L rapid drain detected while driver was off-duty at Belapur truck stop.',
     litresLost: 18.5,
-    locationSnapshot: { lat: 19.0433, lng: 73.0232 },
+    locationSnapshot: { lat: 19.0200, lng: 73.0380 },
     status: 'RESOLVED',
     resolvedAt: Date.now() - ONE_DAY_MS * 26 - ONE_HOUR_MS * 2.5,
-    resolutionNotes: 'Siphon detected within 1.8s. Push notification dispatched.'
+    resolutionNotes: 'Driver alerted via loud mobile siren; siphon hose confiscated on site.'
   },
   {
-    id: 'ALT-TEST-01',
+    id: 'ALT-DF-01',
     timestamp: Date.now() - ONE_DAY_MS * 26 - ONE_HOUR_MS * 7.5,
     severity: 'WARNING',
     type: 'TAMPER_LOOP_SEVERED',
-    title: 'Initial Bench Tamper Circuit Test',
-    description: '[Test Run #01] Bench tamper circuit initial test: GPIO 26 loop disconnected manually to test trip detection.',
+    title: 'Sensor Harness Tamper Attempt',
+    description: 'Physical sender harness disconnected while vehicle parked in loading dock.',
     locationSnapshot: { lat: 19.0433, lng: 73.0232 },
     status: 'RESOLVED',
     resolvedAt: Date.now() - ONE_DAY_MS * 26 - ONE_HOUR_MS * 7.0,
-    resolutionNotes: 'Circuit trip confirmed on Blynk datastream V9.'
+    resolutionNotes: 'Harness inspection completed; tamper circuit continuity verified at 100%.'
   }
 ];
 

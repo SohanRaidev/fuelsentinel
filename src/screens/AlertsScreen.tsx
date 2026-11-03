@@ -102,7 +102,7 @@ export const AlertsScreen: React.FC = () => {
           </div>
         </div>
 
-        {/* BENCH & FLEET TEST LOGS CONTROLLER BAR */}
+        {/* FLEET LOGS CONTROLLER BAR */}
         <div
           style={{
             display: 'flex',
@@ -120,12 +120,12 @@ export const AlertsScreen: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span style={{ fontWeight: 700, color: '#0F172A' }}>{filteredAlerts.length} Logs</span>
             <span>&bull;</span>
-            <span style={{ color: '#64748B' }}>Past 30 Days Test Records</span>
+            <span style={{ color: '#64748B' }}>Past 30 Days Incident Logs</span>
           </div>
 
           <button
             onClick={() => {
-              if (window.confirm('Reset alert log history to the 15 standard bench-testing incidents from the past month?')) {
+              if (window.confirm('Reset incident log history to the 15 standard fleet security events from the past month?')) {
                 reloadTestingAlerts();
               }
             }}
@@ -140,7 +140,7 @@ export const AlertsScreen: React.FC = () => {
               cursor: 'pointer'
             }}
           >
-            Reset 15 Test Logs
+            Reload Fleet Logs
           </button>
         </div>
 

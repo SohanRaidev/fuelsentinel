@@ -143,9 +143,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) 
               marginBottom: '6px'
             }}
           >
-            {vehicles.slice(0, 3).map((v) => {
+            {vehicles.slice(0, 3).map((v, idx) => {
               const isSelected = v.id === vehicle.id;
-              const isTest = v.id === 'VEH-FS-TEST' || v.plate.includes('TEST');
               return (
                 <button
                   key={v.id}
@@ -158,7 +157,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) 
                     gap: '6px',
                     padding: '8px 6px',
                     borderRadius: '9px',
-                    border: isSelected ? '1px solid #16A34A' : '1px solid transparent',
+                    border: isSelected ? '1.5px solid #16A34A' : '1px solid transparent',
                     backgroundColor: isSelected ? '#FFFFFF' : 'transparent',
                     boxShadow: isSelected ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
                     color: isSelected ? '#15803D' : '#64748B',
@@ -168,9 +167,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) 
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  <span>{isTest ? '🔬' : '🚛'}</span>
+                  <span>{idx === 1 ? '🚚' : '🚛'}</span>
                   <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {isTest ? 'Bench Test Unit' : v.name.split('(')[0].trim()}
+                    {v.name}
                   </span>
                   {isSelected && (
                     <span
