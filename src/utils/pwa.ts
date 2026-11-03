@@ -46,6 +46,17 @@ class PwaManager {
             console.log('[PWA] ServiceWorker registered with scope:', reg.scope);
             reg.update();
             window.addEventListener('focus', () => reg.update());
+            reg.addEventListener('updatefound', () => {
+              const newWorker = reg.installing;
+              if (newWorker) {
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    console.log('[PWA] New update found and installed; activating immediately...');
+                    newWorker.postMessage({ type: 'SKIP_WAITING' });
+                  }
+                });
+              }
+            });
           })
           .catch((err) => {
             console.warn('[PWA] ServiceWorker registration failed:', err);

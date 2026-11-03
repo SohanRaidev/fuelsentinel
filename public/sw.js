@@ -1,5 +1,5 @@
-// Divine Fuel Service Worker - Network-First for Instant Vercel Deployments
-const CACHE_NAME = 'divinefuel-v2.3.0';
+// Divine Fuel Service Worker - Network-First for Instant Updates
+const CACHE_NAME = 'divinefuel-v3.0.0';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -24,13 +24,13 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         keys.map((key) => {
           if (key !== CACHE_NAME) {
+            console.log('[SW] Purging outdated cache:', key);
             return caches.delete(key);
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener('message', (event) => {
@@ -42,45 +42,32 @@ self.addEventListener('message', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Network-First for Navigation (Ensures user gets the freshest Vercel deployment on refresh)
-  if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const clone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          }
-          return networkResponse;
-        })
-        .catch(() => {
-          return caches.match('/index.html') || caches.match('/');
-        })
-    );
-    return;
-  }
-
-  // Network-First for API / external requests
+  // External APIs or WebSocket requests - network only
   if (url.origin !== location.origin) {
     event.respondWith(fetch(event.request));
     return;
   }
 
-  // Stale-While-Revalidate for local assets
+  // Network-First for ALL local assets (HTML, JS, CSS, JSON)
+  // Ensures user ALWAYS gets the freshest code on refresh, falling back to cache only when offline
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const clone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+    fetch(event.request, { cache: 'no-cache' })
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const clone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return networkResponse;
+      })
+      .catch(() => {
+        return caches.match(event.request).then((cached) => {
+          if (cached) return cached;
+          if (event.request.mode === 'navigate') {
+            return caches.match('/index.html') || caches.match('/');
           }
-          return networkResponse;
-        })
-        .catch(() => cachedResponse);
-
-      return cachedResponse || fetchPromise;
-    })
+          return new Response('Network offline', { status: 503, statusText: 'Offline' });
+        });
+      })
   );
 });
 
