@@ -19,6 +19,7 @@ import { ProfileScreen } from './screens/ProfileScreen';
 import { AuthScreen } from './screens/AuthScreen';
 import { MoreHubScreen } from './screens/MoreHubScreen';
 import { TheftAlarmModal } from './components/TheftAlarmModal';
+import { AlertBanner } from './components/AlertBanner';
 
 interface MainCockpitProps {
   onLogout: () => void;
@@ -96,6 +97,11 @@ const MainCockpit: React.FC<MainCockpitProps> = ({ onLogout }) => {
         onOpenInstallPrompt={() => setInstallModalOpen(true)}
         canInstall={canInstall}
       />
+
+      {/* Global Security Banner on Auxiliary Screens */}
+      {activeScreen !== 'dashboard' && (
+        <AlertBanner onNavigateToSecurity={() => handleSelectScreen('alerts')} />
+      )}
 
       {/* 2. Screen Body */}
       <main style={{ flex: 1, paddingBottom: '16px' }}>

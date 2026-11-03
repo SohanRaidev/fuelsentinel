@@ -1,7 +1,7 @@
 // Divine Fuel - Automotive Telemetry Context & Live Hardware Integration
 // Supports Multi-Vehicle Fleet, Live IoT Hardware Gateway (V0-V9), and Resilient Security Alarms
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type {
   VehicleConfig,
   FuelTelemetry,
@@ -45,6 +45,7 @@ export interface TelemetryContextType {
   gps: GpsTelemetry;
   diagnostics: Esp32Diagnostics;
   alerts: SecurityAlert[];
+  allFleetAlerts: SecurityAlert[];
   history: HistoricalEvent[];
   firebaseConfig: FirebaseConfig;
   blynkConfig: BlynkConfig;
@@ -165,6 +166,7 @@ const ONE_HOUR_MS = 3600000;
 export const INITIAL_ALERTS: SecurityAlert[] = [
   {
     id: 'ALT-DF-15',
+    vehicleId: 'VEH-FS-TEST',
     timestamp: Date.now() - ONE_DAY_MS * 1,
     severity: 'CRITICAL',
     type: 'RAPID_DRAIN_THEFT',
@@ -178,6 +180,7 @@ export const INITIAL_ALERTS: SecurityAlert[] = [
   },
   {
     id: 'ALT-DF-14',
+    vehicleId: 'VEH-FS-TEST',
     timestamp: Date.now() - ONE_DAY_MS * 2,
     severity: 'WARNING',
     type: 'STALE_DATA_OFFLINE',
@@ -190,6 +193,7 @@ export const INITIAL_ALERTS: SecurityAlert[] = [
   },
   {
     id: 'ALT-DF-13',
+    vehicleId: 'VEH-FS-TEST',
     timestamp: Date.now() - ONE_DAY_MS * 5 - ONE_HOUR_MS * 1,
     severity: 'WARNING',
     type: 'LOW_FUEL',
@@ -203,6 +207,7 @@ export const INITIAL_ALERTS: SecurityAlert[] = [
   },
   {
     id: 'ALT-DF-12',
+    vehicleId: 'VEH-FS-TEST',
     timestamp: Date.now() - ONE_DAY_MS * 5 - ONE_HOUR_MS * 3.5,
     severity: 'CRITICAL',
     type: 'TAMPER_LOOP_SEVERED',
@@ -215,6 +220,7 @@ export const INITIAL_ALERTS: SecurityAlert[] = [
   },
   {
     id: 'ALT-DF-11',
+    vehicleId: 'VEH-FS-TEST',
     timestamp: Date.now() - ONE_DAY_MS * 5 - ONE_HOUR_MS * 7,
     severity: 'CRITICAL',
     type: 'RAPID_DRAIN_THEFT',
@@ -228,6 +234,7 @@ export const INITIAL_ALERTS: SecurityAlert[] = [
   },
   {
     id: 'ALT-DF-10',
+    vehicleId: 'VEH-FS-TEST',
     timestamp: Date.now() - ONE_DAY_MS * 7,
     severity: 'WARNING',
     type: 'GPS_SIGNAL_LOST',
@@ -240,6 +247,7 @@ export const INITIAL_ALERTS: SecurityAlert[] = [
   },
   {
     id: 'ALT-DF-09',
+    vehicleId: 'VEH-FS-TEST',
     timestamp: Date.now() - ONE_DAY_MS * 10 - ONE_HOUR_MS * 0.5,
     severity: 'CRITICAL',
     type: 'TAMPER_LOOP_SEVERED',
@@ -253,6 +261,7 @@ export const INITIAL_ALERTS: SecurityAlert[] = [
   },
   {
     id: 'ALT-DF-08',
+    vehicleId: 'VEH-FS-TEST',
     timestamp: Date.now() - ONE_DAY_MS * 10 - ONE_HOUR_MS * 1.2,
     severity: 'CRITICAL',
     type: 'RAPID_DRAIN_THEFT',
@@ -266,6 +275,7 @@ export const INITIAL_ALERTS: SecurityAlert[] = [
   },
   {
     id: 'ALT-DF-07',
+    vehicleId: 'VEH-FS-TEST',
     timestamp: Date.now() - ONE_DAY_MS * 13,
     severity: 'WARNING',
     type: 'GEOFENCE_BREACH',
@@ -278,6 +288,7 @@ export const INITIAL_ALERTS: SecurityAlert[] = [
   },
   {
     id: 'ALT-DF-06',
+    vehicleId: 'VEH-FS-TEST',
     timestamp: Date.now() - ONE_DAY_MS * 17 - ONE_HOUR_MS * 1,
     severity: 'WARNING',
     type: 'BATTERY_DISCONNECT',
@@ -290,6 +301,7 @@ export const INITIAL_ALERTS: SecurityAlert[] = [
   },
   {
     id: 'ALT-DF-05',
+    vehicleId: 'VEH-FS-TEST',
     timestamp: Date.now() - ONE_DAY_MS * 17 - ONE_HOUR_MS * 3.2,
     severity: 'WARNING',
     type: 'BATTERY_DISCONNECT',
@@ -302,6 +314,7 @@ export const INITIAL_ALERTS: SecurityAlert[] = [
   },
   {
     id: 'ALT-DF-04',
+    vehicleId: 'VEH-FS-TEST',
     timestamp: Date.now() - ONE_DAY_MS * 20,
     severity: 'WARNING',
     type: 'LOW_FUEL',
@@ -315,6 +328,7 @@ export const INITIAL_ALERTS: SecurityAlert[] = [
   },
   {
     id: 'ALT-DF-03',
+    vehicleId: 'VEH-FS-TEST',
     timestamp: Date.now() - ONE_DAY_MS * 26 - ONE_HOUR_MS * 1.5,
     severity: 'CRITICAL',
     type: 'RAPID_DRAIN_THEFT',
@@ -328,6 +342,7 @@ export const INITIAL_ALERTS: SecurityAlert[] = [
   },
   {
     id: 'ALT-DF-02',
+    vehicleId: 'VEH-FS-TEST',
     timestamp: Date.now() - ONE_DAY_MS * 26 - ONE_HOUR_MS * 3.0,
     severity: 'CRITICAL',
     type: 'RAPID_DRAIN_THEFT',
@@ -341,6 +356,7 @@ export const INITIAL_ALERTS: SecurityAlert[] = [
   },
   {
     id: 'ALT-DF-01',
+    vehicleId: 'VEH-FS-TEST',
     timestamp: Date.now() - ONE_DAY_MS * 26 - ONE_HOUR_MS * 7.5,
     severity: 'WARNING',
     type: 'TAMPER_LOOP_SEVERED',
@@ -383,86 +399,73 @@ const INITIAL_HISTORY: HistoricalEvent[] = [
 const INITIAL_TRIPS: TripRecord[] = [
   {
     id: 'TRIP-101',
-    title: 'Morning Route: Bandra to BKC',
-    dateStr: 'Today · 8:45 AM - 9:20 AM',
-    startTime: Date.now() - 3600000 * 3,
-    endTime: Date.now() - 3600000 * 2.4,
+    title: 'Highway Transit: Kopar Khairane to Phaltan Education Society',
+    dateStr: 'Today · 6:30 AM - 10:45 AM',
+    startTime: Date.now() - 3600000 * 4.5,
+    endTime: Date.now() - 3600000 * 0.2,
     status: 'COMPLETED',
-    distanceKm: 12.4,
-    fuelConsumedLitres: 1.35,
+    distanceKm: 234.5,
+    fuelConsumedLitres: 16.2,
     fuelLostLitres: 0.0,
-    averageEfficiencyKmL: 9.18,
-    startLocation: 'Bandra West, Mumbai',
-    endLocation: 'BKC Complex, Mumbai',
+    averageEfficiencyKmL: 14.5,
+    startLocation: 'Kopar Khairane, Navi Mumbai',
+    endLocation: 'Phaltan Education Society, Phaltan',
     routeHighlightColor: '#16A34A',
     waypoints: [
-      { lat: 19.0596, lng: 72.8295, timestamp: Date.now() - 3600000 * 3, speedKmh: 0, fuelLitres: 49.8 },
-      { lat: 19.0610, lng: 72.8350, timestamp: Date.now() - 3600000 * 2.9, speedKmh: 34, fuelLitres: 49.5 },
-      { lat: 19.0632, lng: 72.8440, timestamp: Date.now() - 3600000 * 2.8, speedKmh: 42, fuelLitres: 49.2 },
-      { lat: 19.0620, lng: 72.8530, timestamp: Date.now() - 3600000 * 2.7, speedKmh: 38, fuelLitres: 48.9 },
-      { lat: 19.0645, lng: 72.8620, timestamp: Date.now() - 3600000 * 2.5, speedKmh: 28, fuelLitres: 48.6 },
-      { lat: 19.0657, lng: 72.8687, timestamp: Date.now() - 3600000 * 2.4, speedKmh: 0, fuelLitres: 48.45 }
+      { lat: 19.0988, lng: 73.0076, timestamp: Date.now() - 3600000 * 4.5, speedKmh: 0, fuelLitres: 43.5 },
+      { lat: 19.0745, lng: 73.0180, timestamp: Date.now() - 3600000 * 4.2, speedKmh: 45, fuelLitres: 42.8 },
+      { lat: 19.0280, lng: 73.0650, timestamp: Date.now() - 3600000 * 3.9, speedKmh: 58, fuelLitres: 42.1 },
+      { lat: 19.0020, lng: 73.1090, timestamp: Date.now() - 3600000 * 3.7, speedKmh: 75, fuelLitres: 41.2 },
+      { lat: 18.8150, lng: 73.2840, timestamp: Date.now() - 3600000 * 3.2, speedKmh: 92, fuelLitres: 39.5 },
+      { lat: 18.7550, lng: 73.4080, timestamp: Date.now() - 3600000 * 2.8, speedKmh: 64, fuelLitres: 37.8 },
+      { lat: 18.6940, lng: 73.6550, timestamp: Date.now() - 3600000 * 2.3, speedKmh: 95, fuelLitres: 35.6 },
+      { lat: 18.6430, lng: 73.7420, timestamp: Date.now() - 3600000 * 2.0, speedKmh: 80, fuelLitres: 34.2 },
+      { lat: 18.5910, lng: 73.7580, timestamp: Date.now() - 3600000 * 1.7, speedKmh: 72, fuelLitres: 33.1 },
+      { lat: 18.4480, lng: 73.8560, timestamp: Date.now() - 3600000 * 1.3, speedKmh: 68, fuelLitres: 31.5 },
+      { lat: 18.3320, lng: 73.8740, timestamp: Date.now() - 3600000 * 1.0, speedKmh: 82, fuelLitres: 30.1 },
+      { lat: 18.1360, lng: 73.9850, timestamp: Date.now() - 3600000 * 0.6, speedKmh: 88, fuelLitres: 28.5 },
+      { lat: 18.0420, lng: 74.1860, timestamp: Date.now() - 3600000 * 0.3, speedKmh: 62, fuelLitres: 27.2 },
+      { lat: 17.9856, lng: 74.4338, timestamp: Date.now() - 3600000 * 0.1, speedKmh: 0, fuelLitres: 26.1 }
     ]
   },
   {
     id: 'TRIP-102',
-    title: 'Fleet Run: Andheri East to Powai Tech Park',
-    dateStr: 'Today · 1:10 PM - 1:55 PM',
-    startTime: Date.now() - 3600000 * 1.5,
-    endTime: Date.now() - 3600000 * 0.8,
+    title: 'Return Transit: Phaltan Education Society to Lonand Junction',
+    dateStr: 'Yesterday · 4:10 PM - 4:55 PM',
+    startTime: Date.now() - 3600000 * 22,
+    endTime: Date.now() - 3600000 * 21.2,
     status: 'COMPLETED',
-    distanceKm: 18.2,
-    fuelConsumedLitres: 2.10,
+    distanceKm: 28.4,
+    fuelConsumedLitres: 2.1,
     fuelLostLitres: 0.0,
-    averageEfficiencyKmL: 8.67,
-    startLocation: 'MIDC Andheri East',
-    endLocation: 'Hiranandani Gardens, Powai',
+    averageEfficiencyKmL: 13.5,
+    startLocation: 'Phaltan Education Society, Phaltan',
+    endLocation: 'Lonand Junction, Satara',
     routeHighlightColor: '#0284C7',
     waypoints: [
-      { lat: 19.1136, lng: 72.8697, timestamp: Date.now() - 3600000 * 1.5, speedKmh: 0, fuelLitres: 48.45 },
-      { lat: 19.1160, lng: 72.8790, timestamp: Date.now() - 3600000 * 1.3, speedKmh: 36, fuelLitres: 47.9 },
-      { lat: 19.1205, lng: 72.8910, timestamp: Date.now() - 3600000 * 1.1, speedKmh: 48, fuelLitres: 47.3 },
-      { lat: 19.1176, lng: 72.9060, timestamp: Date.now() - 3600000 * 0.8, speedKmh: 0, fuelLitres: 46.35 }
+      { lat: 17.9856, lng: 74.4338, timestamp: Date.now() - 3600000 * 22, speedKmh: 0, fuelLitres: 32.0 },
+      { lat: 18.0120, lng: 74.3100, timestamp: Date.now() - 3600000 * 21.6, speedKmh: 55, fuelLitres: 30.8 },
+      { lat: 18.0420, lng: 74.1860, timestamp: Date.now() - 3600000 * 21.2, speedKmh: 0, fuelLitres: 29.9 }
     ]
   },
   {
     id: 'TRIP-103',
-    title: 'Parked Incident: Rapid Fuel Siphon Drain',
-    dateStr: 'Yesterday · 11:15 PM - 11:32 PM',
-    startTime: Date.now() - 3600000 * 25,
-    endTime: Date.now() - 3600000 * 24.7,
+    title: 'Local Shuttle: Kopar Khairane to Turbhe MIDC Depot',
+    dateStr: '28 Oct · 11:15 AM - 11:38 AM',
+    startTime: Date.now() - 3600000 * 120,
+    endTime: Date.now() - 3600000 * 119.6,
     status: 'COMPLETED',
-    distanceKm: 0.0,
-    fuelConsumedLitres: 0.0,
-    fuelLostLitres: 3.5, // 3.5L lost to siphon while parked!
-    averageEfficiencyKmL: 0,
-    startLocation: 'Depot Lot 4, Kurla West',
-    endLocation: 'Depot Lot 4, Kurla West',
-    routeHighlightColor: '#DC2626',
-    waypoints: [
-      { lat: 19.0728, lng: 72.8797, timestamp: Date.now() - 3600000 * 25, speedKmh: 0, fuelLitres: 53.3 },
-      { lat: 19.0728, lng: 72.8797, timestamp: Date.now() - 3600000 * 24.7, speedKmh: 0, fuelLitres: 49.8 }
-    ]
-  },
-  {
-    id: 'TRIP-104',
-    title: 'Highway Express: Navi Mumbai to Thane',
-    dateStr: '29 Oct · 3:20 PM - 4:15 PM',
-    startTime: Date.now() - 3600000 * 70,
-    endTime: Date.now() - 3600000 * 69.1,
-    status: 'COMPLETED',
-    distanceKm: 34.8,
-    fuelConsumedLitres: 3.60,
+    distanceKm: 6.8,
+    fuelConsumedLitres: 0.65,
     fuelLostLitres: 0.0,
-    averageEfficiencyKmL: 9.67,
-    startLocation: 'Vashi Toll Plaza, Navi Mumbai',
-    endLocation: 'Majiwada Junction, Thane',
-    routeHighlightColor: '#16A34A',
+    averageEfficiencyKmL: 10.4,
+    startLocation: 'Kopar Khairane Sector 4',
+    endLocation: 'Turbhe MIDC Industrial Area',
+    routeHighlightColor: '#D97706',
     waypoints: [
-      { lat: 19.0745, lng: 72.9978, timestamp: Date.now() - 3600000 * 70, speedKmh: 0, fuelLitres: 56.9 },
-      { lat: 19.1120, lng: 72.9920, timestamp: Date.now() - 3600000 * 69.7, speedKmh: 68, fuelLitres: 55.4 },
-      { lat: 19.1710, lng: 72.9830, timestamp: Date.now() - 3600000 * 69.4, speedKmh: 62, fuelLitres: 54.2 },
-      { lat: 19.2183, lng: 72.9781, timestamp: Date.now() - 3600000 * 69.1, speedKmh: 0, fuelLitres: 53.3 }
+      { lat: 19.0988, lng: 73.0076, timestamp: Date.now() - 3600000 * 120, speedKmh: 0, fuelLitres: 44.0 },
+      { lat: 19.0850, lng: 73.0120, timestamp: Date.now() - 3600000 * 119.8, speedKmh: 35, fuelLitres: 43.6 },
+      { lat: 19.0745, lng: 73.0180, timestamp: Date.now() - 3600000 * 119.6, speedKmh: 0, fuelLitres: 43.35 }
     ]
   }
 ];
@@ -502,10 +505,19 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return DEFAULT_FLEET;
   });
 
-  // Trip tracking state
+  // Trip tracking state (Kopar Khairane to Phaltan Education Society corridor)
   const [trips, setTrips] = useState<TripRecord[]>(() => {
     const saved = localStorage.getItem('fs_trips');
-    return saved ? JSON.parse(saved) : INITIAL_TRIPS;
+    if (saved) {
+      try {
+        const parsed: TripRecord[] = JSON.parse(saved);
+        if (parsed.some((t) => t.startLocation.includes('Kopar') || t.endLocation.includes('Phaltan'))) {
+          return parsed;
+        }
+      } catch {}
+    }
+    localStorage.setItem('fs_trips', JSON.stringify(INITIAL_TRIPS));
+    return INITIAL_TRIPS;
   });
   const [selectedTripId, setSelectedTripId] = useState<string | null>('TRIP-101');
 
@@ -565,8 +577,9 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isAudioMuted, setIsAudioMuted] = useState(false);
   const [activeScenario, setActiveScenario] = useState<SimulationScenario>('NORMAL_PARKED');
 
-  // Dismissed alert messages cache (prevents static historical alert text from re-arming alarm every 2.5s)
-  const dismissedMessagesRef = useRef<Set<string>>(new Set(['TAMPERING DETECTED!']));
+  // Tamper & Theft alarm state tracking (ensures fresh tamper events re-trigger properly even after silencing)
+  const isAlarmSilencedRef = useRef<boolean>(false);
+  const lastTamperPinRef = useRef<number>(0);
 
   const [fuel, setFuel] = useState<FuelTelemetry>(() => ({
     litres: 0,
@@ -647,12 +660,29 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          // Self-healing migration: assign any initial or historical test alerts to 'VEH-FS-TEST'
+          return parsed.map((a: SecurityAlert) => {
+            if (a.id?.startsWith('ALT-DF-') || !a.vehicleId) {
+              return { ...a, vehicleId: 'VEH-FS-TEST' };
+            }
+            return a;
+          });
         }
       } catch {}
     }
     return INITIAL_ALERTS;
   });
+
+  // Active Vehicle Scoped Alerts: Real Ertiga (VEH-FS-01) has 0 fake alerts!
+  // Test Vehicle (VEH-FS-TEST) holds the 15 simulated historical fleet incidents.
+  const activeAlerts = useMemo(() => {
+    return alerts.filter((alert) => {
+      if (alert.vehicleId) {
+        return alert.vehicleId === activeVehicleId;
+      }
+      return activeVehicleId === 'VEH-FS-TEST';
+    });
+  }, [alerts, activeVehicleId]);
 
   const [history, setHistory] = useState<HistoricalEvent[]>(() => {
     const saved = localStorage.getItem('fs_history');
@@ -846,6 +876,7 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const resetTamper = () => {
     audioAlert.stopAlarm();
+    isAlarmSilencedRef.current = true;
     if (blynkConfig.authToken) {
       fetch(`https://blynk.cloud/external/api/update?token=${blynkConfig.authToken}&v2=OK`, { mode: 'cors' }).catch(() => {});
       fetch(`https://blynk.cloud/external/api/update?token=${blynkConfig.authToken}&v9=0`, { mode: 'cors' }).catch(() => {});
@@ -860,12 +891,10 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }));
   };
 
-  // Dismiss / Silence any active alert
+  // Dismiss / Silence any active alert without permanently blacklisting future incidents
   const dismissAlert = (alertId?: string) => {
     audioAlert.stopAlarm();
-    if (blynkPins.v2) {
-      dismissedMessagesRef.current.add(blynkPins.v2.trim());
-    }
+    isAlarmSilencedRef.current = true;
     if (blynkConfig.authToken) {
       fetch(`https://blynk.cloud/external/api/update?token=${blynkConfig.authToken}&v2=OK`, { mode: 'cors' }).catch(() => {});
       fetch(`https://blynk.cloud/external/api/update?token=${blynkConfig.authToken}&v9=0`, { mode: 'cors' }).catch(() => {});
@@ -1053,12 +1082,30 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
         // Security logic: V6 = Ignition, V9 = Tamper sensor loop (0=SECURE, 1=TRIPPED)
         // Live alarm evaluation is strictly active ONLY when hardware is verified online
+        const pinV9 = parsedPins.v9;
+        const tamperJustTripped = pinV9 === 1 && lastTamperPinRef.current === 0;
+        const tamperJustRestored = pinV9 === 0 && lastTamperPinRef.current === 1;
+
+        if (tamperJustRestored) {
+          isAlarmSilencedRef.current = false;
+        }
+        if (tamperJustTripped) {
+          // Wire was freshly cut/broken - unconditionally re-arm and fire alarm immediately!
+          isAlarmSilencedRef.current = false;
+        }
+        lastTamperPinRef.current = pinV9;
+
         const isIgnitionOn = isHwConnected && parsedPins.v6 === 1;
-        const isTampered = isHwConnected && parsedPins.v9 === 1; // Physical wire severed
+        const isTampered = isHwConnected && pinV9 === 1; // Physical wire severed
         const rawTheftMsg = parsedPins.v2.trim();
-        const isDismissed = dismissedMessagesRef.current.has(rawTheftMsg);
-        const hasTheftMsg = isHwConnected && rawTheftMsg !== '' && rawTheftMsg !== 'OK' && rawTheftMsg !== '0' && !isDismissed;
-        const isAlarm = isHwConnected && (isTampered || Boolean(hasTheftMsg));
+        const hasTheftMsg = isHwConnected && rawTheftMsg !== '' && rawTheftMsg !== 'OK' && rawTheftMsg !== '0';
+
+        const hardwareAlarmActive = isHwConnected && (isTampered || hasTheftMsg);
+        if (!hardwareAlarmActive) {
+          isAlarmSilencedRef.current = false;
+        }
+
+        const isAlarm = hardwareAlarmActive && !isAlarmSilencedRef.current;
 
         setSecurity((prev) => {
           if (isAlarm && !prev.theftAlarmActive) {
@@ -1072,6 +1119,7 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             const litresLostAmount = Math.round(((parsedPins.v8 / 100) * activeVehicle.tankCapacityLitres) * 10) / 10;
             const newLiveAlert: SecurityAlert = {
               id: `ALT-LIVE-${nowTime}`,
+              vehicleId: activeVehicle.id,
               timestamp: nowTime,
               severity: 'CRITICAL',
               type: isTampered ? 'TAMPER_LOOP_SEVERED' : 'RAPID_DRAIN_THEFT',
@@ -1447,7 +1495,8 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         security,
         gps,
         diagnostics,
-        alerts,
+        alerts: activeAlerts,
+        allFleetAlerts: alerts,
         history,
         firebaseConfig,
         blynkConfig,

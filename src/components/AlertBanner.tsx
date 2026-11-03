@@ -10,43 +10,61 @@ interface AlertBannerProps {
 }
 
 export const AlertBanner: React.FC<AlertBannerProps> = ({ onNavigateToSecurity }) => {
-  const { alerts, security, dismissAlert } = useTelemetry();
+  const { alerts, security, hardwarePins, dismissAlert, resetTamper, vehicle } = useTelemetry();
 
   // Find any active unacknowledged critical alert
   const criticalAlert = alerts.find(
     (a) => a.status === 'ACTIVE_UNACKNOWLEDGED' && a.severity === 'CRITICAL'
   );
 
-  // If no critical alert and alarm is not actively sounding, do not display
-  if (!criticalAlert && !security.theftAlarmActive) {
+  const isTamperTripped = security.tamper === 'TRIPPED' || hardwarePins?.v9 === 1;
+
+  // If no critical alert, alarm is not actively sounding, and tamper loop is secure, do not display
+  if (!criticalAlert && !security.theftAlarmActive && !isTamperTripped) {
     return null;
   }
 
-  const alertTitle = criticalAlert ? criticalAlert.title : security.theftAlarmReason || 'Fuel / Tamper Sensor Triggered';
+  const alertTitle = isTamperTripped
+    ? `⚠️ Tamper Detected on ${vehicle?.name || 'Vehicle'}`
+    : criticalAlert
+    ? criticalAlert.title
+    : security.theftAlarmReason || 'Fuel Siphon / Tamper Event Triggered';
+
+  const alertSubtitle = isTamperTripped
+    ? 'Anti-tamper loop wire severed (Pin V9 = 1). Security perimeter compromised!'
+    : criticalAlert
+    ? criticalAlert.description
+    : 'Live hardware sensor triggered. Tap to inspect security incident.';
+
+  const handleDismiss = () => {
+    resetTamper();
+    dismissAlert(criticalAlert?.id);
+  };
 
   return (
     <div
-      className="brutal-panel"
       style={{
-        backgroundColor: 'var(--accent-critical-bg)',
-        borderColor: 'var(--accent-critical)',
-        borderWidth: 'var(--border-width)',
-        color: 'var(--accent-critical-ink)',
+        backgroundColor: '#FEF2F2',
+        border: '1.5px solid #EF4444',
+        borderRadius: '14px',
+        color: '#991B1B',
         padding: '10px 14px',
-        marginBottom: '12px',
+        margin: '0 14px 12px 14px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexWrap: 'wrap',
-        gap: '10px'
+        gap: '10px',
+        boxShadow: '0 4px 12px rgba(220, 38, 38, 0.12)'
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: '240px' }}>
         <div
           style={{
-            width: '28px',
-            height: '28px',
-            backgroundColor: 'var(--accent-critical)',
+            width: '32px',
+            height: '32px',
+            borderRadius: '8px',
+            backgroundColor: '#DC2626',
             color: '#FFFFFF',
             display: 'flex',
             alignItems: 'center',
@@ -57,11 +75,11 @@ export const AlertBanner: React.FC<AlertBannerProps> = ({ onNavigateToSecurity }
           <ShieldAlertIcon size={18} color="#FFFFFF" />
         </div>
         <div>
-          <div style={{ fontFamily: 'var(--font-header)', fontSize: '13px', fontWeight: 700, letterSpacing: '0.02em' }}>
+          <div style={{ fontSize: '13px', fontWeight: 800, letterSpacing: '0.01em', color: '#7F1D1D' }}>
             {alertTitle}
           </div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--accent-critical-ink)', opacity: 0.85 }}>
-            Security sensor event recorded while parked. Tap to view security alerts.
+          <div style={{ fontSize: '11px', color: '#B91C1C', marginTop: '1px' }}>
+            {alertSubtitle}
           </div>
         </div>
       </div>
@@ -70,24 +88,38 @@ export const AlertBanner: React.FC<AlertBannerProps> = ({ onNavigateToSecurity }
         {onNavigateToSecurity && (
           <button
             onClick={onNavigateToSecurity}
-            className="btn-brutal btn-brutal-sm btn-brutal-subtle"
-            style={{ fontSize: '11px', padding: '5px 10px' }}
+            style={{
+              padding: '6px 11px',
+              borderRadius: '8px',
+              border: 'none',
+              backgroundColor: '#DC2626',
+              color: '#FFFFFF',
+              fontSize: '11px',
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
           >
-            VIEW ALERTS
+            VIEW INCIDENT
           </button>
         )}
         <button
-          onClick={() => dismissAlert(criticalAlert?.id)}
-          className="btn-brutal btn-brutal-sm btn-brutal-primary"
+          onClick={handleDismiss}
           style={{
+            padding: '6px 11px',
+            borderRadius: '8px',
+            border: '1px solid #FCA5A5',
+            backgroundColor: '#FFFFFF',
+            color: '#991B1B',
             fontSize: '11px',
-            padding: '5px 12px',
-            backgroundColor: 'var(--ink-primary)',
-            color: '#FFFFFF'
+            fontWeight: 700,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px'
           }}
         >
           <CloseIcon size={12} />
-          DISMISS & SILENCE
+          SILENCE
         </button>
       </div>
     </div>

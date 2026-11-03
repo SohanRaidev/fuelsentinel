@@ -31,11 +31,11 @@ export const LocationScreen: React.FC = () => {
   const [copiedCoords, setCopiedCoords] = useState(false);
 
   // Route Planner State
-  const [plannerDestination, setPlannerDestination] = useState('Central Cargo Hub');
-  const [plannerDistanceKm, setPlannerDistanceKm] = useState(24.5);
+  const [plannerDestination, setPlannerDestination] = useState('Phaltan Education Society, Phaltan');
+  const [plannerDistanceKm, setPlannerDistanceKm] = useState(234.5);
   const [fuelCostPerLitre] = useState(96.5);
 
-  const vehicleEfficiencyKmL = 8.9;
+  const vehicleEfficiencyKmL = 14.5;
   const estimatedFuelLitres = Math.round((plannerDistanceKm / vehicleEfficiencyKmL) * 10) / 10;
   const estimatedCost = Math.round(estimatedFuelLitres * fuelCostPerLitre);
   const isFuelSufficient = fuel.litres >= estimatedFuelLitres;
@@ -175,10 +175,10 @@ export const LocationScreen: React.FC = () => {
             </label>
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               {[
-                { name: 'Central Air Cargo Hub', dist: 24.5 },
-                { name: 'Seaport Container Pier', dist: 18.2 },
-                { name: 'North Industrial Park', dist: 36.0 },
-                { name: 'City Delivery Loop', dist: 12.4 }
+                { name: 'Phaltan Education Society', dist: 234.5 },
+                { name: 'Lonand Junction Hub', dist: 28.4 },
+                { name: 'Shirwal Highway Stop', dist: 68.2 },
+                { name: 'Kopar Khairane Depot', dist: 15.2 }
               ].map((dest) => (
                 <button
                   key={dest.name}

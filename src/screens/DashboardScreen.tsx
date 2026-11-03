@@ -22,7 +22,8 @@ import {
   ExternalLinkIcon,
   FoldedMapIcon,
   WarningAlertBoxIcon,
-  LocationPinBoxIcon
+  LocationPinBoxIcon,
+  SirenIcon
 } from '../components/Icons';
 import type { ScreenId } from '../components/Navigation';
 
@@ -46,7 +47,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) 
     alerts,
     blynkConfig,
     isHardwareOnline,
-    triggerHardwareSync
+    triggerHardwareSync,
+    resetTamper,
+    dismissAlert
   } = useTelemetry();
 
   const totalTripsDistance = trips.reduce((acc, t) => acc + t.distanceKm, 0);
@@ -101,6 +104,102 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigate }) 
       <div className="dashboard-desktop-grid">
         {/* LEFT COLUMN: VEHICLE HEADER, HERO FUEL & TRIAD */}
         <div className="dashboard-col-left">
+          {/* HIGH-PRIORITY TAMPER DETECTED ALERT BANNER */}
+          {(security.tamper === 'TRIPPED' || hardwarePins.v9 === 1 || security.theftAlarmActive) && (
+            <div
+              className="ios-card"
+              style={{
+                backgroundColor: '#FEF2F2',
+                border: '2px solid #DC2626',
+                borderRadius: '18px',
+                padding: '14px 16px',
+                marginBottom: '12px',
+                boxShadow: '0 8px 24px -4px rgba(220, 38, 38, 0.25)',
+                animation: 'emergencyFadeIn 0.25s ease-out'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                <div
+                  style={{
+                    width: '42px',
+                    height: '42px',
+                    borderRadius: '12px',
+                    backgroundColor: '#DC2626',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    boxShadow: '0 4px 12px rgba(220, 38, 38, 0.35)'
+                  }}
+                >
+                  <SirenIcon size={24} color="#FFFFFF" />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
+                    <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#991B1B', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                      ⚠️ Tamper Detected &bull; {vehicle.name}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: '10px',
+                        fontWeight: 800,
+                        padding: '2px 7px',
+                        borderRadius: '6px',
+                        backgroundColor: security.theftAlarmActive ? '#DC2626' : '#EA580C',
+                        color: '#FFFFFF'
+                      }}
+                    >
+                      {security.theftAlarmActive ? 'SIREN ACTIVE' : 'LOOP SEVERED (PIN V9=1)'}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#B91C1C', marginTop: '4px', lineHeight: 1.4 }}>
+                    {security.theftAlarmReason || 'Physical anti-tamper security loop on tank sender harness has been disconnected or severed!'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div style={{ display: 'flex', gap: '8px', marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #FECACA' }}>
+                <button
+                  onClick={() => {
+                    resetTamper();
+                    dismissAlert();
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    borderRadius: '10px',
+                    border: '1.5px solid #DC2626',
+                    backgroundColor: '#FFFFFF',
+                    color: '#DC2626',
+                    fontSize: '11.5px',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Silence Siren / Reset
+                </button>
+                <button
+                  onClick={() => onNavigate('alerts')}
+                  style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    backgroundColor: '#DC2626',
+                    color: '#FFFFFF',
+                    fontSize: '11.5px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 6px rgba(220, 38, 38, 0.3)'
+                  }}
+                >
+                  View Incident &rarr;
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* 1. VEHICLE HEADER CARD (CLEAN & STATIONARY) */}
           <div className="ios-card vehicle-selector-card" style={{ cursor: 'default' }}>
             <div className="vehicle-info-left">

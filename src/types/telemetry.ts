@@ -118,6 +118,7 @@ export interface Esp32Diagnostics {
 
 export interface SecurityAlert {
   id: string;
+  vehicleId?: string; // Scopes alert to specific vehicle (e.g. 'VEH-FS-TEST' vs 'VEH-FS-01')
   timestamp: number;
   severity: AlertSeverity;
   type:

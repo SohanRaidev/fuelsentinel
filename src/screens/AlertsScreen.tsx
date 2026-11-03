@@ -120,28 +120,36 @@ export const AlertsScreen: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span style={{ fontWeight: 700, color: '#0F172A' }}>{filteredAlerts.length} Logs</span>
             <span>&bull;</span>
-            <span style={{ color: '#64748B' }}>Past 30 Days Incident Logs</span>
+            <span style={{ color: '#64748B' }}>
+              {vehicle.id === 'VEH-FS-TEST' ? 'Test Bench Past 30 Days Incident Logs' : `${vehicle.name} Real Live Telemetry Logs`}
+            </span>
           </div>
 
-          <button
-            onClick={() => {
-              if (window.confirm('Reset incident log history to the 15 standard fleet security events from the past month?')) {
-                reloadTestingAlerts();
-              }
-            }}
-            style={{
-              padding: '3px 8px',
-              backgroundColor: '#ECFDF5',
-              border: '1px solid #BBF7D0',
-              borderRadius: '6px',
-              fontSize: '11px',
-              fontWeight: 700,
-              color: '#15803D',
-              cursor: 'pointer'
-            }}
-          >
-            Reload Fleet Logs
-          </button>
+          {vehicle.id === 'VEH-FS-TEST' ? (
+            <button
+              onClick={() => {
+                if (window.confirm('Reset incident log history to the 15 standard fleet security events from the past month for the Test Vehicle?')) {
+                  reloadTestingAlerts();
+                }
+              }}
+              style={{
+                padding: '3px 8px',
+                backgroundColor: '#ECFDF5',
+                border: '1px solid #BBF7D0',
+                borderRadius: '6px',
+                fontSize: '11px',
+                fontWeight: 700,
+                color: '#15803D',
+                cursor: 'pointer'
+              }}
+            >
+              Reload Test Logs
+            </button>
+          ) : (
+            <span style={{ fontSize: '10.5px', fontWeight: 700, color: '#16A34A', backgroundColor: '#F0FDF4', padding: '2px 8px', borderRadius: '6px' }}>
+              Production Live Mode
+            </span>
+          )}
         </div>
 
         {filteredAlerts.length === 0 ? (
@@ -149,9 +157,13 @@ export const AlertsScreen: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
               <ShieldSecureIcon size={32} color="#16A34A" />
             </div>
-            <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>Zero Security Incidents</div>
-            <div style={{ fontSize: '12px', marginTop: '3px' }}>
-              No fuel theft, sudden drops, or tamper trigger alerts in this view filter.
+            <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>
+              {vehicle.id === 'VEH-FS-01' ? 'Perimeter Secure &bull; No Incidents Logged' : 'Zero Security Incidents'}
+            </div>
+            <div style={{ fontSize: '12px', marginTop: '3px', maxWidth: '360px', margin: '3px auto 0' }}>
+              {vehicle.id === 'VEH-FS-01'
+                ? `Anti-theft and tamper loop sensors for ${vehicle.name} are actively armed. Any hardware siphon or harness cut will be logged here in real time.`
+                : 'No fuel theft, sudden drops, or tamper trigger alerts in this view filter.'}
             </div>
           </div>
         ) : (
